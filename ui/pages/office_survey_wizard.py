@@ -481,125 +481,387 @@ class OfficeSurveyWizard(QWidget):
     # ==================== Step 1: Building Selection (S01-S03) ====================
 
     def _create_building_step(self) -> QWidget:
-        """Create Step 1: Building Search and Selection with Map (S01-S03)."""
+        """Create Step 1: Building Search and Selection (New UI)"""
         widget = QWidget()
+        widget.setLayoutDirection(Qt.RightToLeft)
+
         layout = QVBoxLayout(widget)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
 
-        # Instructions
-        instructions = QLabel(
-            "ابحث عن المبنى باستخدام رقم المبنى أو العنوان أو حدده على الخريطة"
-        )
-        instructions.setStyleSheet(f"color: {Config.TEXT_LIGHT}; padding: 8px;")
-        layout.addWidget(instructions)
-
-        # Tabs for search methods
-        search_tabs = QTabWidget()
-
-        # Tab 1: Text Search
-        text_search_tab = QWidget()
-        ts_layout = QVBoxLayout(text_search_tab)
-
-        # Search controls
-        search_frame = QFrame()
-        search_frame.setStyleSheet("background-color: #F8FAFC; border-radius: 8px; padding: 12px;")
-        search_layout = QHBoxLayout(search_frame)
-
-        self.building_search = QLineEdit()
-        self.building_search.setPlaceholderText("بحث برقم المبنى أو العنوان...")
-        self.building_search.textChanged.connect(self._filter_buildings)
-        self.building_search.returnPressed.connect(self._search_buildings)
-        search_layout.addWidget(self.building_search, stretch=2)
-
-        # Governorate filter
-        self.gov_combo = QComboBox()
-        self.gov_combo.addItem("كل المحافظات", "")
-        # Add governorates from config/vocabularies
-        self.gov_combo.currentIndexChanged.connect(self._filter_buildings)
-        search_layout.addWidget(self.gov_combo)
-
-        search_btn = QPushButton("🔍 بحث")
-        search_btn.clicked.connect(self._search_buildings)
-        search_layout.addWidget(search_btn)
-
-        ts_layout.addWidget(search_frame)
-
-        # Buildings list
-        self.buildings_list = QListWidget()
-        self.buildings_list.setStyleSheet("""
-            QListWidget {
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-                background-color: white;
+    # ===== Card: Building Data =====
+        card = QFrame()
+        card.setStyleSheet("""
+            QFrame {
+            background-color: #FFFFFF;
+            border: 1px solid #E1E8ED;
+            border-radius: 12px;
             }
-            QListWidget::item {
-                padding: 12px;
-                border-bottom: 1px solid #F3F4F6;
-            }
-            QListWidget::item:selected {
-                background-color: #DBEAFE;
+            """)
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(16, 16, 16, 16)
+        card_layout.setSpacing(12)
+
+        # Header (title + subtitle)
+        header_row = QHBoxLayout()
+        header_row.setSpacing(8)
+
+        header_text_col = QVBoxLayout()
+        header_text_col.setSpacing(2)
+
+        title = QLabel("بيانات البناء")
+        title.setStyleSheet("font-size: 16px; font-weight: 700; color: #2C3E50;")
+        subtitle = QLabel("ابحث عن معلومات البناء والموقع الجغرافي")
+        subtitle.setStyleSheet("font-size: 12px; color: #7F8C9B;")
+
+        header_text_col.addWidget(title)
+        header_text_col.addWidget(subtitle)
+
+        header_row.addLayout(header_text_col)
+        header_row.addStretch()
+        icon_lbl = QLabel("📄")
+        icon_lbl.setStyleSheet("""
+            QLabel {
+                background-color: #EFF6FF;
+                border: 1px solid #DBEAFE;
+                border-radius: 10px;
+                padding: 8px 10px;
+                font-size: 16px;
             }
         """)
+        header_row.addWidget(icon_lbl)
+
+        card_layout.addLayout(header_row)
+
+        # Building Code label
+        code_label = QLabel("رمز البناء")
+        code_label.setStyleSheet("font-size: 12px; color: #2C3E50; font-weight: 600;")
+        card_layout.addWidget(code_label)
+
+        # Row: code input + search icon button
+        code_row = QHBoxLayout()
+        code_row.setSpacing(8)
+
+        self.building_search = QLineEdit()
+        self.building_search.setPlaceholderText("ابحث عن رمز البناء ...")
+        self.building_search.setStyleSheet("""
+            QLineEdit {
+                background-color: #FFFFFF;
+                border: 1px solid #E1E8ED;
+                border-radius: 10px;
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+            QLineEdit:focus {
+            border: 2px solid #00B2E3;
+            padding: 9px 11px;
+            }
+            """)
+    # نفس الربط القديم بس بدل ما نكسر شي
+        self.building_search.textChanged.connect(self._on_building_code_changed)
+        self.building_search.returnPressed.connect(self._search_buildings)
+        code_row.addWidget(self.building_search, stretch=1)
+
+        search_icon_btn = QPushButton("🔍")
+        search_icon_btn.setFixedWidth(44)
+        search_icon_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FFFFFF;
+                border: 1px solid #E1E8ED;
+                border-radius: 10px;
+                padding: 8px;
+            }
+            QPushButton:hover { background-color: #F8FAFC; }
+            """)
+        search_icon_btn.clicked.connect(self._search_buildings)
+        code_row.addWidget(search_icon_btn)
+
+        card_layout.addLayout(code_row)
+
+    # Suggestions list (Dropdown look)
+        self.buildings_list = QListWidget()
+        self.buildings_list.setVisible(False)
+        self.buildings_list.setStyleSheet("""
+            QListWidget {
+                border: 1px solid #E1E8ED;
+                border-radius: 10px;
+                background-color: #FFFFFF;
+                }
+            QListWidget::item {
+                padding: 10px 12px;
+                border-bottom: 1px solid #F1F5F9;
+                color: #2C3E50;
+                }
+            QListWidget::item:selected {
+                background-color: #EFF6FF;
+                }
+        """)
+        self.buildings_list.setMaximumHeight(160)
         self.buildings_list.itemClicked.connect(self._on_building_selected)
         self.buildings_list.itemDoubleClicked.connect(self._on_building_confirmed)
-        ts_layout.addWidget(self.buildings_list)
+        card_layout.addWidget(self.buildings_list)
 
-        search_tabs.addTab(text_search_tab, "🔍 بحث نصي")
+    # "Search on Map" button (looks like input)
+        self.search_on_map_btn = QPushButton("بحث على الخريطة")
+        self.search_on_map_btn.setCursor(Qt.PointingHandCursor)
+        self.search_on_map_btn.setStyleSheet("""
+            QPushButton {
+                text-align: right;
+                background-color: #F5FAFF;
+                border: 1px solid #DCE7F5;
+                border-radius: 10px;
+                padding: 10px 12px;
+                color: #3890DF;
+                font-weight: 600;
+            }
+            QPushButton:hover { background-color: #EEF6FF; }
+        """)
+        self.search_on_map_btn.clicked.connect(self._open_map_search_dialog)
+        card_layout.addWidget(self.search_on_map_btn)
 
-        # Tab 2: Map Search (S02 - Map navigation)
-        map_search_tab = QWidget()
-        ms_layout = QVBoxLayout(map_search_tab)
+        
+        self.gov_combo = QComboBox()
+        self.gov_combo.addItem("كل المحافظات", "")
+        self.gov_combo.setVisible(False)
 
-        # Map placeholder or actual map
-        try:
-            from PyQt5.QtWebEngineWidgets import QWebEngineView
-            self.building_map = QWebEngineView()
-            self.building_map.setMinimumHeight(350)
-            self._load_buildings_map()
-            ms_layout.addWidget(self.building_map)
+        layout.addWidget(card)
 
-            map_info = QLabel("انقر على مبنى في الخريطة لتحديده")
-            map_info.setStyleSheet(f"color: {Config.INFO_COLOR}; padding: 8px;")
-            ms_layout.addWidget(map_info)
-        except ImportError:
-            map_placeholder = QLabel("🗺️ الخريطة غير متاحة\nيرجى استخدام البحث النصي")
-            map_placeholder.setAlignment(Qt.AlignCenter)
-            map_placeholder.setStyleSheet(f"""
-                background-color: #F8FAFC;
-                color: {Config.TEXT_LIGHT};
-                padding: 40px;
-                border-radius: 8px;
-            """)
-            ms_layout.addWidget(map_placeholder)
-
-        search_tabs.addTab(map_search_tab, "🗺️ خريطة")
-
-        layout.addWidget(search_tabs)
-
-        # Selected building info
+    # ===== Selected building details (New UI blocks) =====
         self.selected_building_frame = QFrame()
-        self.selected_building_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: #ECFDF5;
-                border: 2px solid {Config.SUCCESS_COLOR};
-                border-radius: 8px;
-                padding: 12px;
-            }}
+        self.selected_building_frame.setStyleSheet("""
+            QFrame {
+                background-color: #FFFFFF;
+                border: 1px solid #E1E8ED;
+                border-radius: 12px;
+        }
         """)
         self.selected_building_frame.hide()
 
-        sb_layout = QVBoxLayout(self.selected_building_frame)
+        sb = QVBoxLayout(self.selected_building_frame)
+        sb.setContentsMargins(16, 16, 16, 16)
+        sb.setSpacing(12)
+
+        # 1) General info line (arrow 1)
+        info_bar = QFrame()
+        info_bar.setStyleSheet("""
+            QFrame {
+                background-color: #F5FAFF;
+                border: 1px solid #DCE7F5;
+                border-radius: 10px;
+            }
+        """)
+        info_layout = QHBoxLayout(info_bar)
+        info_layout.setContentsMargins(12, 10, 12, 10)
+
+    
         self.selected_building_label = QLabel("")
-        self.selected_building_label.setStyleSheet("font-weight: bold;")
-        sb_layout.addWidget(self.selected_building_label)
+        self.selected_building_label.setStyleSheet("color: #2C3E50; font-weight: 600;")
+        self.selected_building_label.setWordWrap(True)
+
+        info_icon = QLabel("🏢")
+        info_icon.setStyleSheet("font-size: 16px; color: #3890DF;")
+        info_layout.addWidget(info_icon)
+        info_layout.addWidget(self.selected_building_label, stretch=1)
+
+        sb.addWidget(info_bar)
+
+        # 2) Stats row (arrow 2) - placeholders for now (نعبّيها بالخطوة الجاية)
+        stats = QFrame()
+        stats.setStyleSheet("""
+            QFrame {
+                background-color: #FFFFFF;
+                border: 1px solid #E1E8ED;
+                border-radius: 10px;
+            }
+        """)
+        stats_layout = QHBoxLayout(stats)
+        stats_layout.setContentsMargins(12, 12, 12, 12)
+        stats_layout.setSpacing(12)
+
+        def _stat_block(title_text, value_text="-"):
+            box = QFrame()
+            box.setStyleSheet("QFrame { background: transparent; }")
+            v = QVBoxLayout(box)
+            v.setSpacing(4)
+            t = QLabel(title_text)
+            t.setStyleSheet("font-size: 12px; color: #7F8C9B; font-weight: 600;")
+            val = QLabel(value_text)
+            val.setStyleSheet("font-size: 13px; color: #2C3E50; font-weight: 700;")
+            v.addWidget(t, alignment=Qt.AlignHCenter)
+            v.addWidget(val, alignment=Qt.AlignHCenter)
+            return box, val
+
+        box_status, self.ui_building_status = _stat_block("حالة البناء")
+        box_type, self.ui_building_type = _stat_block("نوع البناء")
+        box_units, self.ui_units_count = _stat_block("عدد الوحدات")
+        box_parcels, self.ui_parcels_count = _stat_block("عدد المقاسم")
+        box_shops, self.ui_shops_count = _stat_block("عدد المحلات")
+
+        for b in [box_status, box_type, box_units, box_parcels, box_shops]:
+            stats_layout.addWidget(b, stretch=1)
+
+        sb.addWidget(stats)
+
+        # 3) Location card with thumbnail (arrow 3) - UI فقط الآن
+        loc = QFrame()
+        loc.setStyleSheet("""
+            QFrame {
+                background-color: #FFFFFF;
+                border: 1px solid #E1E8ED;
+                border-radius: 10px;
+            }
+        """)
+        loc_layout = QHBoxLayout(loc)
+        loc_layout.setContentsMargins(12, 12, 12, 12)
+        loc_layout.setSpacing(12)
+
+        loc_text_col = QVBoxLayout()
+        loc_title = QLabel("موقع البناء")
+        loc_title.setStyleSheet("font-size: 12px; color: #2C3E50; font-weight: 700;")
+        loc_desc = QLabel("وصف الموقع")
+        loc_desc.setStyleSheet("font-size: 12px; color: #7F8C9B;")
+        loc_text_col.addWidget(loc_title)
+        loc_text_col.addWidget(loc_desc)
+        loc_text_col.addStretch()
+
+        loc_layout.addLayout(loc_text_col, stretch=1)
+
+        thumb_col = QVBoxLayout()
+        self.map_thumbnail = QLabel("خريطة مصغّرة")
+        self.map_thumbnail.setAlignment(Qt.AlignCenter)
+        self.map_thumbnail.setFixedSize(280, 120)
+        self.map_thumbnail.setStyleSheet("""
+            QLabel {
+                background-color: #F8FAFC;
+                border: 1px solid #E1E8ED;
+                border-radius: 10px;
+                color: #7F8C9B;
+            }
+        """)
+
+        self.open_map_btn = QPushButton("قم بفتح الخريطة")
+        self.open_map_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FFFFFF;
+                border: 1px solid #DCE7F5;
+                border-radius: 10px;
+                padding: 8px 10px;
+                color: #3890DF;
+                font-weight: 700;
+            }
+            QPushButton:hover { background-color: #EEF6FF; }
+        """)
+    # منربطه بالخطوة الجاية (منطق)
+        self.open_map_btn.setEnabled(False)
+
+        thumb_col.addWidget(self.map_thumbnail)
+        thumb_col.addWidget(self.open_map_btn, alignment=Qt.AlignLeft)
+        loc_layout.addLayout(thumb_col)
+
+        sb.addWidget(loc)
 
         layout.addWidget(self.selected_building_frame)
 
-        # Load initial buildings
+        # Load initial buildings (نفس القديم)
         self._load_buildings()
-
         return widget
+    def _on_building_code_changed(self):
+        """UI behavior: filter + show/hide suggestions"""
+        text = self.building_search.text().strip()
+    # فلترة نفس القديم
+        self._filter_buildings()
+    # إظهار الاقتراحات فقط وقت في نص
+        self.buildings_list.setVisible(bool(text))
+
+    def _open_map_search_dialog(self):
+        """Open modal dialog like the design (UI only for now)."""
+        dlg = QDialog(self)
+        dlg.setModal(True)
+        dlg.setWindowTitle("بحث على الخريطة")
+        dlg.setFixedSize(820, 420)
+
+        dlg.setStyleSheet("""
+            QDialog {
+                background-color: rgba(0,0,0,120);
+            }
+        """)
+
+        outer = QVBoxLayout(dlg)
+        outer.setContentsMargins(24, 24, 24, 24)
+
+        panel = QFrame()
+        panel.setStyleSheet("""
+            QFrame {
+                background-color: #FFFFFF;
+                border-radius: 16px;
+            }
+        """)
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(24)
+        shadow.setOffset(0, 6)
+        shadow.setColor(QColor(0, 0, 0, 60))
+        panel.setGraphicsEffect(shadow)
+
+        p = QVBoxLayout(panel)
+        p.setContentsMargins(18, 18, 18, 18)
+        p.setSpacing(12)
+
+        title = QLabel("بحث على الخريطة")
+        title.setStyleSheet("font-size: 14px; font-weight: 800; color: #2C3E50;")
+        p.addWidget(title, alignment=Qt.AlignRight)
+
+        # Search row (UI only)
+        search_row = QHBoxLayout()
+        search_row.setSpacing(8)
+        search_input = QLineEdit()
+        search_input.setPlaceholderText("ابحث عن اسم المنطقة ...")
+        search_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #FFFFFF;
+                border: 1px solid #E1E8ED;
+                border-radius: 10px;
+                padding: 10px 12px;
+            }
+        """)
+        search_btn = QPushButton("🔍")
+        search_btn.setFixedWidth(44)
+        search_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FFFFFF;
+                border: 1px solid #E1E8ED;
+                border-radius: 10px;
+                padding: 8px;
+            }
+            QPushButton:hover { background-color: #F8FAFC; }
+        """)
+        search_row.addWidget(search_btn)
+        search_row.addWidget(search_input, stretch=1)
+        p.addLayout(search_row)
+
+    # Map view (reuse existing loader)
+        try:
+            from PyQt5.QtWebEngineWidgets import QWebEngineView
+            self.building_map = QWebEngineView()
+            self.building_map.setMinimumHeight(260)
+            p.addWidget(self.building_map)
+            self._load_buildings_map()
+        except ImportError:
+            placeholder = QLabel("🗺️ الخريطة غير متاحة (QtWebEngine غير مثبت)")
+            placeholder.setAlignment(Qt.AlignCenter)
+            placeholder.setStyleSheet("""
+                QLabel {
+                    background-color: #F8FAFC;
+                    border: 1px solid #E1E8ED;
+                    border-radius: 10px;
+                    padding: 40px;
+                    color: #7F8C9B;
+                }
+            """)
+            p.addWidget(placeholder)
+
+        outer.addWidget(panel)
+        dlg.exec_()
+
 
     def _load_buildings_map(self):
         """Load interactive map for building selection (S02)."""

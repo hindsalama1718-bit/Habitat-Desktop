@@ -8787,3 +8787,63 @@ Query:
 2026-01-08 20:31:56 | DEBUG    | trrcms.app.main_window_v2 | Tab 0 selected -> navigating to claims
 2026-01-08 20:32:02 | INFO     | trrcms.app.main_window_v2 | Application closing
 2026-01-08 20:32:02 | INFO     | trrcms | Application closed with exit code: 0
+2026-01-09 19:17:11 | INFO     | trrcms | ================================================================================
+2026-01-09 19:17:11 | INFO     | trrcms | Starting TRRCMS Application
+2026-01-09 19:17:11 | INFO     | trrcms | ================================================================================
+2026-01-09 19:17:11 | INFO     | trrcms | Initializing database...
+2026-01-09 19:17:11 | WARNING  | trrcms.repositories.db_adapter | psycopg2 not installed. PostgreSQL support unavailable.
+2026-01-09 19:17:11 | WARNING  | trrcms.repositories.db_adapter | PostgreSQL unavailable, falling back to SQLite
+2026-01-09 19:17:11 | INFO     | trrcms.repositories.db_adapter | Using SQLite database: c:\Users\Laptop-PC\.javacpp\Desktop\un\Habitat-Desktop\data\trrcms.db
+2026-01-09 19:17:11 | INFO     | trrcms.repositories.db_adapter | Initializing SQLite database at: c:\Users\Laptop-PC\.javacpp\Desktop\un\Habitat-Desktop\data\trrcms.db
+2026-01-09 19:17:11 | DEBUG    | trrcms.repositories.db_adapter | All SQLite tables created successfully
+2026-01-09 19:17:11 | INFO     | trrcms.repositories.db_adapter | SQLite database initialized successfully
+2026-01-09 19:17:11 | INFO     | trrcms | >> Database initialized successfully
+2026-01-09 19:17:11 | INFO     | trrcms | Initializing internationalization...
+2026-01-09 19:17:11 | INFO     | trrcms | >> Internationalization initialized (Arabic)
+2026-01-09 19:17:11 | INFO     | trrcms | Creating main window (NEW DESIGN v2 with Navbar)...
+2026-01-09 19:17:14 | ERROR    | trrcms | Fatal error during application startup: expected an indented block after function definition on line 768 (office_survey_wizard.py, line 769)
+Traceback (most recent call last):
+  File "c:\Users\Laptop-PC\.javacpp\Desktop\un\Habitat-Desktop\main.py", line 68, in main
+    window = MainWindow(db, i18n)
+  File "c:\Users\Laptop-PC\.javacpp\Desktop\un\Habitat-Desktop\app\main_window_v2.py", line 37, in __init__
+    self._create_widgets()
+    ~~~~~~~~~~~~~~~~~~~~^^
+  File "c:\Users\Laptop-PC\.javacpp\Desktop\un\Habitat-Desktop\app\main_window_v2.py", line 114, in _create_widgets
+    from ui.pages.office_survey_wizard import OfficeSurveyWizard
+  File "c:\Users\Laptop-PC\.javacpp\Desktop\un\Habitat-Desktop\ui\pages\office_survey_wizard.py", line 769
+    """UI behavior: filter + show/hide suggestions"""
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+IndentationError: expected an indented block after function definition on line 768
+2026-01-09 19:20:43 | INFO     | trrcms | ================================================================================
+2026-01-09 19:20:43 | INFO     | trrcms | Starting TRRCMS Application
+2026-01-09 19:20:43 | INFO     | trrcms | ================================================================================
+2026-01-09 19:20:43 | INFO     | trrcms | Initializing database...
+2026-01-09 19:20:43 | WARNING  | trrcms.repositories.db_adapter | psycopg2 not installed. PostgreSQL support unavailable.
+2026-01-09 19:20:43 | WARNING  | trrcms.repositories.db_adapter | PostgreSQL unavailable, falling back to SQLite
+2026-01-09 19:20:43 | INFO     | trrcms.repositories.db_adapter | Using SQLite database: c:\Users\Laptop-PC\.javacpp\Desktop\un\Habitat-Desktop\data\trrcms.db
+2026-01-09 19:20:43 | INFO     | trrcms.repositories.db_adapter | Initializing SQLite database at: c:\Users\Laptop-PC\.javacpp\Desktop\un\Habitat-Desktop\data\trrcms.db
+2026-01-09 19:20:43 | DEBUG    | trrcms.repositories.db_adapter | All SQLite tables created successfully
+2026-01-09 19:20:43 | INFO     | trrcms.repositories.db_adapter | SQLite database initialized successfully
+2026-01-09 19:20:43 | INFO     | trrcms | >> Database initialized successfully
+2026-01-09 19:20:43 | INFO     | trrcms | Initializing internationalization...
+2026-01-09 19:20:43 | INFO     | trrcms | >> Internationalization initialized (Arabic)
+2026-01-09 19:20:43 | INFO     | trrcms | Creating main window (NEW DESIGN v2 with Navbar)...
+2026-01-09 19:20:45 | ERROR    | trrcms.repositories.db_adapter | SQLite fetch_all error: no such table: surveys
+Query: 
+            SELECT * FROM surveys
+            WHERE status = 'draft' AND source = 'office'
+            ORDER BY updated_at DESC
+            LIMIT ? OFFSET ?
+        
+2026-01-09 19:20:45 | ERROR    | trrcms.ui.pages.draft_office_surveys_page_v2 | Error loading drafts: no such table: surveys
+2026-01-09 19:20:45 | INFO     | trrcms.app.main_window_v2 | Showing login page
+2026-01-09 19:20:46 | INFO     | trrcms | >> Main window created and displayed
+2026-01-09 19:20:46 | INFO     | trrcms | ================================================================================
+2026-01-09 19:20:46 | INFO     | trrcms | >> Application started successfully!
+2026-01-09 19:20:46 | INFO     | trrcms | ================================================================================
+2026-01-09 19:20:56 | WARNING  | trrcms.services.auth_service | Failed login attempt for admin (1/5)
+2026-01-09 19:20:56 | WARNING  | trrcms.ui.pages.login_page | Login failed: admin
+2026-01-09 19:20:59 | WARNING  | trrcms.services.auth_service | Failed login attempt for admin (2/5)
+2026-01-09 19:20:59 | WARNING  | trrcms.ui.pages.login_page | Login failed: admin
+2026-01-09 19:21:06 | INFO     | trrcms.app.main_window_v2 | Application closing
+2026-01-09 19:21:07 | INFO     | trrcms | Application closed with exit code: 0
