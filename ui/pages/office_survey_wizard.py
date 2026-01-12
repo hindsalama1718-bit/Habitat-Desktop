@@ -1435,8 +1435,11 @@ class OfficeSurveyWizard(QWidget):
         if not self.context.building:
             return
 
-        # Populate building info card
-        self._format_building_details_for_unit_step(self.context.building)
+        # Populate building info (simple text display)
+        if hasattr(self, 'unit_building_label'):
+            self.unit_building_label.setText(
+                f"🏢 المبنى المحدد: {self.context.building.building_id}"
+            )
 
         # Clear existing unit cards
         while self.units_layout.count():
