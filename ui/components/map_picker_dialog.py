@@ -10,6 +10,7 @@ Works OFFLINE using local tiles and libraries.
 import json
 import sqlite3
 import base64
+import time
 from typing import Dict, Optional
 from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -43,6 +44,13 @@ class TileServer(BaseHTTPRequestHandler):
     _tile_cache = {}  # In-memory tile cache
     _db_connection = None  # Persistent database connection
     _static_cache = {}  # Cache for static files
+    _perf_stats = {
+        'cache_hits': 0,
+        'cache_misses': 0,
+        'db_queries': 0,
+        'total_requests': 0,
+        'slowest_request': 0
+    }
 
     def log_message(self, format, *args):
         """Suppress logging."""
@@ -141,14 +149,23 @@ class TileServer(BaseHTTPRequestHandler):
 
     def _serve_tile_cached(self, z, x, y):
         """Serve a map tile with aggressive caching."""
+        start_time = time.time()
+        TileServer._perf_stats['total_requests'] += 1
+
         # Check cache first
         cache_key = f"{z}/{x}/{y}"
         if cache_key in TileServer._tile_cache:
+            TileServer._perf_stats['cache_hits'] += 1
             tile_data = TileServer._tile_cache[cache_key]
             self._send_tile_response(tile_data)
+            elapsed = (time.time() - start_time) * 1000
+            if elapsed > TileServer._perf_stats['slowest_request']:
+                TileServer._perf_stats['slowest_request'] = elapsed
             return
 
-        # Get from database
+        # Cache miss - get from database
+        TileServer._perf_stats['cache_misses'] += 1
+        TileServer._perf_stats['db_queries'] += 1
         tile_data = self._get_tile_fast(z, x, y)
 
         # Cache it (limit cache size to 1000 tiles ~ 10-20MB)
@@ -156,6 +173,10 @@ class TileServer(BaseHTTPRequestHandler):
             TileServer._tile_cache[cache_key] = tile_data
 
         self._send_tile_response(tile_data)
+
+        elapsed = (time.time() - start_time) * 1000
+        if elapsed > TileServer._perf_stats['slowest_request']:
+            TileServer._perf_stats['slowest_request'] = elapsed
 
     def _send_tile_response(self, tile_data):
         """Send tile HTTP response."""
@@ -202,6 +223,25 @@ class TileServer(BaseHTTPRequestHandler):
         except Exception as e:
             logger.error(f"Error reading tile {z}/{x}/{y}: {e}")
             return None
+
+    @classmethod
+    def log_performance_stats(cls):
+        """Log tile server performance statistics."""
+        stats = cls._perf_stats
+        total = stats['total_requests']
+        if total == 0:
+            logger.info("No tile requests yet")
+            return
+
+        cache_hit_rate = (stats['cache_hits'] / total * 100) if total > 0 else 0
+        logger.info(f"=== Tile Server Performance Stats ===")
+        logger.info(f"Total requests: {total}")
+        logger.info(f"Cache hits: {stats['cache_hits']} ({cache_hit_rate:.1f}%)")
+        logger.info(f"Cache misses: {stats['cache_misses']}")
+        logger.info(f"DB queries: {stats['db_queries']}")
+        logger.info(f"Slowest request: {stats['slowest_request']:.2f}ms")
+        logger.info(f"Cache size: {len(cls._tile_cache)} tiles")
+        logger.info(f"Static cache size: {len(cls._static_cache)} files")
 
 
 def find_free_port():
@@ -515,43 +555,92 @@ class MapPickerDialog(QDialog):
     <style>
         body {{ margin: 0; padding: 0; }}
         #map {{ width: 100%; height: 100vh; }}
+
+        /* OPTIMIZATION 1: Skeleton UI with shimmer animation */
         .loading-overlay {{
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: linear-gradient(
+                90deg,
+                #e8f1f9 0%,
+                #f0f7fc 20%,
+                #e8f1f9 40%,
+                #e8f1f9 100%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite linear;
+            z-index: 9998;
+        }}
+
+        @keyframes shimmer {{
+            0% {{ background-position: 200% 0; }}
+            100% {{ background-position: -200% 0; }}
+        }}
+
+        .loading-content {{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
             z-index: 9999;
+        }}
+
+        .map-skeleton {{
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            position: relative;
+        }}
+
+        .skeleton-marker {{
+            width: 30px;
+            height: 40px;
+            background: #0072BC;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            margin: 10px auto;
+            opacity: 0.3;
+            animation: pulse 1.5s ease-in-out infinite;
+        }}
+
+        @keyframes pulse {{
+            0%, 100% {{ opacity: 0.3; transform: rotate(-45deg) scale(1); }}
+            50% {{ opacity: 0.6; transform: rotate(-45deg) scale(1.1); }}
+        }}
+
+        .loading-text {{
+            color: #0072BC;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            margin-bottom: 8px;
+        }}
+
+        .loading-subtext {{
+            color: #5D6D7E;
+            font-size: 12px;
             font-family: 'Segoe UI', Tahoma, sans-serif;
         }}
-        .loading-content {{
-            text-align: center;
-        }}
-        .spinner {{
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #0072BC;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
-        }}
-        @keyframes spin {{
-            0% {{ transform: rotate(0deg); }}
-            100% {{ transform: rotate(360deg); }}
+
+        /* Low-quality tiles placeholder */
+        .leaflet-tile.lqip {{
+            filter: blur(8px);
+            opacity: 0.7;
         }}
     </style>
 </head>
 <body>
     <div id="loading" class="loading-overlay">
         <div class="loading-content">
-            <div class="spinner"></div>
-            <div style="color: #0072BC; font-size: 14px; font-weight: 600;">جارٍ تحميل الخريطة...</div>
-            <div style="color: #5D6D7E; font-size: 12px; margin-top: 8px;">يعمل بدون اتصال بالإنترنت</div>
+            <div class="map-skeleton">
+                <div class="skeleton-marker"></div>
+            </div>
+            <div class="loading-text">جارٍ تحميل الخريطة...</div>
+            <div class="loading-subtext">يعمل بدون اتصال بالإنترنت</div>
         </div>
     </div>
     <div id="map"></div>
@@ -579,21 +668,53 @@ class MapPickerDialog(QDialog):
             wheelPxPerZoomLevel: 120
         }}).setView([{self.initial_lat}, {self.initial_lon}], 15);
 
-        // Use LOCAL tiles from MBTiles with optimizations
-        L.tileLayer('{tile_server_url}/tiles/{{z}}/{{x}}/{{y}}.png', {{
+        // OPTIMIZATION 2 & 3: Progressive Loading with LQIP
+        // CRITICAL FIX: MBTiles only has zoom 10-16, NOT 18!
+        var tileLayer = L.tileLayer('{tile_server_url}/tiles/{{z}}/{{x}}/{{y}}.png', {{
             attribution: 'UN-Habitat Syria',
-            maxZoom: 18,
-            minZoom: 12,
+            maxZoom: 16,  // FIXED: Was 18, but MBTiles only has up to 16
+            minZoom: 10,  // FIXED: Was 12, match MBTiles minimum
             tileSize: 256,
-            updateWhenZooming: false,  // Don't update tiles while zooming
-            updateWhenIdle: true,  // Update only when idle
-            keepBuffer: 2,  // Keep more tiles in buffer
-            maxNativeZoom: 18,
+            updateWhenZooming: false,
+            updateWhenIdle: true,
+            keepBuffer: 4,
+            maxNativeZoom: 16,  // FIXED: Match actual data
+            bounds: [[35.8, 36.8], [36.5, 37.5]],  // Limit to Aleppo area
             errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+        }});
+
+        // LQIP: Show low-res first (zoom - 3 for faster load)
+        var lqipLayer = L.tileLayer('{tile_server_url}/tiles/{{z}}/{{x}}/{{y}}.png', {{
+            maxZoom: 12,  // Low resolution
+            minZoom: 10,
+            className: 'lqip',
+            opacity: 0.6,
+            maxNativeZoom: 16
         }}).addTo(map);
 
-        // Hide loading immediately after tiles start loading
-        setTimeout(hideLoading, 100);
+        // Add full-res layer
+        tileLayer.addTo(map);
+
+        // Remove LQIP after first tiles load (optimized)
+        var tilesLoaded = 0;
+        tileLayer.on('tileload', function() {{
+            tilesLoaded++;
+            if (tilesLoaded >= 4 && map.hasLayer(lqipLayer)) {{  // Only 4 tiles needed
+                map.removeLayer(lqipLayer);
+            }}
+        }});
+
+        // Hide loading IMMEDIATELY when ANY tile loads
+        var firstTileLoaded = false;
+        tileLayer.on('tileload', function() {{
+            if (!firstTileLoaded) {{
+                firstTileLoaded = true;
+                setTimeout(hideLoading, 50);  // Hide after first tile
+            }}
+        }});
+
+        // Aggressive fallback: hide after 500ms regardless
+        setTimeout(hideLoading, 500);
 
         var marker = null;
         var drawnItems = new L.FeatureGroup();
