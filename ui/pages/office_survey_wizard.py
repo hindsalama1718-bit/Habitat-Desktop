@@ -495,6 +495,45 @@ class OfficeSurveyWizard(QWidget):
         }
         return status_map.get(status, ("#6B7280", "⚪", status))
 
+    def _create_metric_widget(self, label: str, value: str) -> QFrame:
+        """Create a metric card widget with label and value."""
+        metric_frame = QFrame()
+        metric_frame.setStyleSheet("""
+            QFrame {
+                background-color: transparent;
+                border: none;
+            }
+        """)
+
+        metric_layout = QVBoxLayout(metric_frame)
+        metric_layout.setSpacing(4)
+        metric_layout.setContentsMargins(8, 8, 8, 8)
+        metric_layout.setAlignment(Qt.AlignCenter)
+
+        # Label
+        label_widget = QLabel(label)
+        label_widget.setAlignment(Qt.AlignCenter)
+        label_widget.setStyleSheet("""
+            font-size: 11px;
+            color: #6B7280;
+            font-weight: 500;
+            border: none;
+        """)
+        metric_layout.addWidget(label_widget)
+
+        # Value
+        value_widget = QLabel(value)
+        value_widget.setAlignment(Qt.AlignCenter)
+        value_widget.setStyleSheet(f"""
+            font-size: 14px;
+            font-weight: 700;
+            color: {Config.PRIMARY_COLOR};
+            border: none;
+        """)
+        metric_layout.addWidget(value_widget)
+
+        return metric_frame
+
     # ==================== Step 1: Building Selection (S01-S03) ====================
 
     def _create_building_step(self) -> QWidget:
@@ -1291,22 +1330,43 @@ class OfficeSurveyWizard(QWidget):
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(16)
 
-        # Selected building info card (compact size)
+        # Selected building info card (search + metrics layout)
         self.unit_building_frame = QFrame()
         self.unit_building_frame.setObjectName("unitBuildingInfoCard")
-        self.unit_building_frame.setStyleSheet(f"""
-            QFrame#unitBuildingInfoCard {{
-                background-color: #F0F9FF;
-                border: 2px solid {Config.INFO_COLOR};
+        self.unit_building_frame.setStyleSheet("""
+            QFrame#unitBuildingInfoCard {
+                background-color: white;
+                border: 1px solid #E5E7EB;
                 border-radius: 8px;
-                padding: 8px 12px;
-            }}
+            }
         """)
 
-        # Card layout (compact spacing)
+        # Card layout
         self.unit_building_layout = QVBoxLayout(self.unit_building_frame)
-        self.unit_building_layout.setSpacing(8)
-        self.unit_building_layout.setContentsMargins(0, 0, 0, 0)
+        self.unit_building_layout.setSpacing(14)
+        self.unit_building_layout.setContentsMargins(14, 14, 14, 14)
+
+        # Search field (will be populated with building address)
+        self.unit_building_search = QLineEdit()
+        self.unit_building_search.setObjectName("unitBuildingSearch")
+        self.unit_building_search.setPlaceholderText("طلب - المدينة - اسم البناية - اسم التجمع - اسم الحي - رقم البناء")
+        self.unit_building_search.setReadOnly(True)
+        self.unit_building_search.setClearButtonEnabled(False)
+        self.unit_building_search.setStyleSheet("""
+            QLineEdit {
+                padding: 10px 12px;
+                border: 1px solid #E5E7EB;
+                border-radius: 6px;
+                background-color: #F9FAFB;
+                font-size: 13px;
+            }
+        """)
+        self.unit_building_layout.addWidget(self.unit_building_search)
+
+        # Metrics row container
+        self.unit_building_metrics_layout = QHBoxLayout()
+        self.unit_building_metrics_layout.setSpacing(22)
+        self.unit_building_layout.addLayout(self.unit_building_metrics_layout)
 
         layout.addWidget(self.unit_building_frame)
 
@@ -1943,39 +2003,61 @@ class OfficeSurveyWizard(QWidget):
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
 
-        # Overall info container frame (stacked cards)
-        overall_info_frame = QFrame()
-        overall_info_frame.setStyleSheet("""
+        # Building info card with search + metrics layout
+        self.household_building_frame = QFrame()
+        self.household_building_frame.setObjectName("householdBuildingInfoCard")
+        self.household_building_frame.setStyleSheet("""
+            QFrame#householdBuildingInfoCard {
+                background-color: white;
+                border: 1px solid #E5E7EB;
+                border-radius: 8px;
+            }
+        """)
+
+        # Card layout
+        self.household_building_layout = QVBoxLayout(self.household_building_frame)
+        self.household_building_layout.setSpacing(14)
+        self.household_building_layout.setContentsMargins(14, 14, 14, 14)
+
+        # Search field (will be populated with building address)
+        self.household_building_search = QLineEdit()
+        self.household_building_search.setObjectName("householdBuildingSearch")
+        self.household_building_search.setPlaceholderText("طلب - المدينة - اسم البناية - اسم التجمع - اسم الحي - رقم البناء")
+        self.household_building_search.setReadOnly(True)
+        self.household_building_search.setClearButtonEnabled(False)
+        self.household_building_search.setStyleSheet("""
+            QLineEdit {
+                padding: 10px 12px;
+                border: 1px solid #E5E7EB;
+                border-radius: 6px;
+                background-color: #F9FAFB;
+                font-size: 13px;
+            }
+        """)
+        self.household_building_layout.addWidget(self.household_building_search)
+
+        # Metrics row container
+        self.household_building_metrics_layout = QHBoxLayout()
+        self.household_building_metrics_layout.setSpacing(22)
+        self.household_building_layout.addLayout(self.household_building_metrics_layout)
+
+        layout.addWidget(self.household_building_frame)
+
+        # Unit info card (separate card below building)
+        self.household_unit_frame = QFrame()
+        self.household_unit_frame.setStyleSheet("""
             QFrame {
                 background-color: white;
                 border: 1px solid #E5E7EB;
                 border-radius: 8px;
-                padding: 16px;
+                padding: 12px;
             }
         """)
-        overall_info_layout = QVBoxLayout(overall_info_frame)
-        overall_info_layout.setSpacing(12)
-        overall_info_layout.setContentsMargins(12, 12, 12, 12)
-
-        # Building info section (top)
-        self.household_building_layout = QVBoxLayout()
-        self.household_building_layout.setSpacing(8)
-        self.household_building_layout.setContentsMargins(0, 0, 0, 0)
-        overall_info_layout.addLayout(self.household_building_layout)
-
-        # Separator line
-        separator = QFrame()
-        separator.setFrameShape(QFrame.HLine)
-        separator.setStyleSheet("background-color: #E5E7EB; max-height: 1px;")
-        overall_info_layout.addWidget(separator)
-
-        # Unit info section (bottom)
-        self.household_unit_layout = QVBoxLayout()
+        self.household_unit_layout = QVBoxLayout(self.household_unit_frame)
         self.household_unit_layout.setSpacing(8)
-        self.household_unit_layout.setContentsMargins(0, 0, 0, 0)
-        overall_info_layout.addLayout(self.household_unit_layout)
+        self.household_unit_layout.setContentsMargins(12, 12, 12, 12)
 
-        layout.addWidget(overall_info_frame)
+        layout.addWidget(self.household_unit_frame)
 
         # Create scroll area for family information sections
         scroll_area = QScrollArea()
@@ -3557,87 +3639,63 @@ class OfficeSurveyWizard(QWidget):
 
         return True
 
-    def _format_household_building_info(self, building: Building):
-        """Format building info for household step (reusing Step 2 format)."""
-        # Clear existing widgets
-        while self.household_building_layout.count():
-            child = self.household_building_layout.takeAt(0)
+    def _format_unit_building_info(self, building: Building):
+        """Format building info for unit step with search + metrics layout."""
+        if not building:
+            return
+
+        # Set search field value to building address
+        address = building.full_address_ar if hasattr(building, 'full_address_ar') and building.full_address_ar else f"رقم البناء - {building.building_id}"
+        self.unit_building_search.setText(address)
+
+        # Clear existing metrics
+        while self.unit_building_metrics_layout.count():
+            child = self.unit_building_metrics_layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
 
-        # Building address title at top center (50% smaller)
+        # Get building data
+        status_display = building.building_status_display if hasattr(building, 'building_status_display') else "منتظر"
+        type_display = building.building_type_display if hasattr(building, 'building_type_display') else "سكني"
+        num_units = str(building.number_of_units) if hasattr(building, 'number_of_units') and building.number_of_units else "0"
+        num_apartments = str(building.number_of_apartments) if hasattr(building, 'number_of_apartments') and building.number_of_apartments else "0"
+        num_shops = str(building.number_of_shops) if hasattr(building, 'number_of_shops') and building.number_of_shops else "0"
+
+        # Add metrics
+        self.unit_building_metrics_layout.addWidget(self._create_metric_widget("حالة البناء", status_display))
+        self.unit_building_metrics_layout.addWidget(self._create_metric_widget("نوع البناء", type_display))
+        self.unit_building_metrics_layout.addWidget(self._create_metric_widget("عدد الوحدات", num_units))
+        self.unit_building_metrics_layout.addWidget(self._create_metric_widget("عدد المقاسم", num_apartments))
+        self.unit_building_metrics_layout.addWidget(self._create_metric_widget("عدد المحلات", num_shops))
+
+    def _format_household_building_info(self, building: Building):
+        """Format building info for household step with search + metrics layout."""
+        if not building:
+            return
+
+        # Set search field value to building address
         address = building.full_address_ar if hasattr(building, 'full_address_ar') and building.full_address_ar else f"رقم البناء - {building.building_id}"
-        title_label = QLabel(address)
-        title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet(f"""
-            font-size: 9px;
-            font-weight: 700;
-            color: {Config.PRIMARY_COLOR};
-            padding: 2px 4px;
-            background-color: #F0F9FF;
-            border-radius: 3px;
-            margin-bottom: 3px;
-        """)
-        self.household_building_layout.addWidget(title_label)
+        self.household_building_search.setText(address)
 
-        # Create horizontal metrics row (50% smaller)
-        metrics_row = QHBoxLayout()
-        metrics_row.setSpacing(4)
-        metrics_row.setContentsMargins(0, 0, 0, 0)
+        # Clear existing metrics
+        while self.household_building_metrics_layout.count():
+            child = self.household_building_metrics_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
 
-        # Get status badge info
-        status_color, _, _ = self._get_status_badge_style(building.building_status)
+        # Get building data
+        status_display = building.building_status_display if hasattr(building, 'building_status_display') else "منتظر"
+        type_display = building.building_type_display if hasattr(building, 'building_type_display') else "سكني"
+        num_units = str(building.number_of_units) if hasattr(building, 'number_of_units') and building.number_of_units else "0"
+        num_apartments = str(building.number_of_apartments) if hasattr(building, 'number_of_apartments') and building.number_of_apartments else "0"
+        num_shops = str(building.number_of_shops) if hasattr(building, 'number_of_shops') and building.number_of_shops else "0"
 
-        # Create smaller metric cards (50% size)
-        metrics_data = [
-            ("حالة البناء", building.building_status_display, status_color),
-            ("نوع البناء", building.building_type_display, "#0072BC"),
-            ("عدد الوحدات", str(building.number_of_units) if building.number_of_units else "0", "#0072BC"),
-            ("عدد المقاسم", str(building.number_of_apartments) if building.number_of_apartments else "0", "#0072BC"),
-            ("عدد المحلات", str(building.number_of_shops) if building.number_of_shops else "0", "#0072BC"),
-        ]
-
-        for label_text, value_text, color in metrics_data:
-            card = QFrame()
-            card.setStyleSheet("""
-                QFrame {
-                    background-color: white;
-                    border: 1px solid #E5E7EB;
-                    border-radius: 3px;
-                    padding: 3px 5px;
-                }
-            """)
-            card_layout = QVBoxLayout(card)
-            card_layout.setContentsMargins(4, 3, 4, 3)
-            card_layout.setSpacing(1)
-            card_layout.setAlignment(Qt.AlignCenter)
-
-            # Label
-            label = QLabel(label_text)
-            label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet("""
-                font-size: 8px;
-                color: #6B7280;
-                font-weight: 500;
-            """)
-            card_layout.addWidget(label)
-
-            # Value
-            value = QLabel(value_text)
-            value.setAlignment(Qt.AlignCenter)
-            value.setStyleSheet(f"""
-                font-size: 10px;
-                font-weight: 700;
-                color: {color};
-            """)
-            card_layout.addWidget(value)
-
-            metrics_row.addWidget(card)
-
-        # Center the metrics row
-        metrics_row.insertStretch(0)
-        metrics_row.addStretch()
-        self.household_building_layout.addLayout(metrics_row)
+        # Add metrics
+        self.household_building_metrics_layout.addWidget(self._create_metric_widget("حالة البناء", status_display))
+        self.household_building_metrics_layout.addWidget(self._create_metric_widget("نوع البناء", type_display))
+        self.household_building_metrics_layout.addWidget(self._create_metric_widget("عدد الوحدات", num_units))
+        self.household_building_metrics_layout.addWidget(self._create_metric_widget("عدد المقاسم", num_apartments))
+        self.household_building_metrics_layout.addWidget(self._create_metric_widget("عدد المحلات", num_shops))
 
     def _format_household_unit_info(self, unit):
         """Format unit info for household step (reusing Step 2 format)."""
@@ -3770,6 +3828,9 @@ class OfficeSurveyWizard(QWidget):
     def _prepare_step(self, step: int):
         """Prepare data for a step."""
         if step == self.STEP_UNIT:
+            # Populate building info card with search + metrics layout
+            if self.context.building:
+                self._format_unit_building_info(self.context.building)
             self._load_units_for_building()
 
         elif step == self.STEP_HOUSEHOLD:
