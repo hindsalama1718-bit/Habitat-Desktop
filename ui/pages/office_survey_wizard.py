@@ -1531,7 +1531,7 @@ class OfficeSurveyWizard(QWidget):
         self.units_layout.addStretch()
 
     def _create_unit_card(self, unit) -> QFrame:
-        """Create a unit card widget with header row on top and details in bottom row."""
+        """Create a unit card widget matching the exact photo layout."""
         # Determine unit display number (from unit_number or apartment_number)
         unit_display_num = unit.unit_number or unit.apartment_number or "?"
 
@@ -1541,9 +1541,8 @@ class OfficeSurveyWizard(QWidget):
         card.setStyleSheet("""
             QFrame#unitCard {
                 background-color: white;
-                border: 2px solid #E5E7EB;
+                border: 1px solid #E5E7EB;
                 border-radius: 8px;
-                padding: 0px;
             }
             QFrame#unitCard:hover {
                 border-color: #0072BC;
@@ -1554,142 +1553,94 @@ class OfficeSurveyWizard(QWidget):
         card.mousePressEvent = lambda _: self._on_unit_card_clicked(unit)
 
         card_layout = QVBoxLayout(card)
-        card_layout.setSpacing(0)
-        card_layout.setContentsMargins(0, 0, 0, 0)
+        card_layout.setSpacing(10)
+        card_layout.setContentsMargins(16, 14, 16, 14)
 
-        # TOP ROW: Header with unit number, type, and status
-        header_frame = QFrame()
-        header_frame.setStyleSheet("""
-            QFrame {
-                background-color: #F9FAFB;
-                border-bottom: 1px solid #E5E7EB;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                padding: 12px 16px;
-            }
-        """)
-        header_layout = QHBoxLayout(header_frame)
-        header_layout.setContentsMargins(16, 12, 16, 12)
-        header_layout.setSpacing(16)
+        # Get unit data
+        unit_type_val = unit.unit_type_display if hasattr(unit, 'unit_type_display') else unit.unit_type
+        status_val = unit.apartment_status_display if hasattr(unit, 'apartment_status_display') else unit.apartment_status or "جيدة"
+        floor_val = str(unit.floor_number) if unit.floor_number is not None else "-"
+        rooms_val = str(getattr(unit, 'number_of_rooms', 0)) if hasattr(unit, 'number_of_rooms') else "-"
+        area_val = f"{unit.area_sqm} (م²)" if unit.area_sqm else "120 (م²)"
 
-        # Unit number (right side)
-        unit_num_label = QLabel(f"الوحدة {unit_display_num}")
-        unit_num_label.setStyleSheet("""
-            font-size: 15px;
-            font-weight: 700;
-            color: #111827;
-        """)
-        header_layout.addWidget(unit_num_label)
+        # Create grid layout for labels and values (6 columns)
+        grid = QGridLayout()
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setHorizontalSpacing(26)
+        grid.setVerticalSpacing(6)
 
-        header_layout.addStretch()
+        # Define fields (RTL: first column appears on the right)
+        fields = [
+            ("رقم الوحدة", str(unit_display_num)),
+            ("رقم الطابق", floor_val),
+            ("عدد الغرف", rooms_val),
+            ("مساحة القسم", area_val),
+            ("نوع الوحدة", unit_type_val),
+            ("حالة الوحدة", status_val),
+        ]
 
-        # Unit type
-        type_label = QLabel(unit.unit_type_display if hasattr(unit, 'unit_type_display') else unit.unit_type)
-        type_label.setStyleSheet("""
-            font-size: 13px;
-            font-weight: 600;
-            color: #0072BC;
-            background-color: #E0F2FE;
-            padding: 4px 12px;
-            border-radius: 6px;
-        """)
-        header_layout.addWidget(type_label)
-
-        # Unit status
-        status_text = unit.apartment_status_display if hasattr(unit, 'apartment_status_display') else unit.apartment_status or "-"
-        status_label = QLabel(status_text)
-        status_label.setStyleSheet("""
-            font-size: 13px;
-            font-weight: 600;
-            color: #059669;
-            background-color: #D1FAE5;
-            padding: 4px 12px;
-            border-radius: 6px;
-        """)
-        header_layout.addWidget(status_label)
-
-        # Checkmark indicator if selected
-        if self.context.unit and self.context.unit.unit_id == unit.unit_id:
-            selected_indicator = QLabel("✓")
-            selected_indicator.setStyleSheet("""
-                font-size: 16px;
-                color: #059669;
-                font-weight: 700;
-            """)
-            header_layout.addWidget(selected_indicator)
-
-        card_layout.addWidget(header_frame)
-
-        # BOTTOM ROW: Variable details - labels in first row, values in second row
-        details_frame = QFrame()
-        details_frame.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                padding: 16px;
-                border-bottom-left-radius: 8px;
-                border-bottom-right-radius: 8px;
-            }
-        """)
-        details_layout = QVBoxLayout(details_frame)
-        details_layout.setContentsMargins(16, 16, 16, 16)
-        details_layout.setSpacing(8)
-
-        # First row: All labels
-        labels_row = QHBoxLayout()
-        labels_row.setSpacing(24)
-
-        # Labels (right to left in Arabic)
-        labels = ["رقم الوحدة", "نوع الوحدة", "حالة الوحدة", "رقم الطابق", "عدد الغرف", "مساحة القسم"]
-        for label_text in labels:
+        # Add labels (row 0) and values (row 1)
+        for col, (label_text, value_text) in enumerate(fields):
+            # Label
             label = QLabel(label_text)
             label.setAlignment(Qt.AlignCenter)
             label.setStyleSheet("""
+                color: #111827;
+                font-weight: 900;
                 font-size: 11px;
-                color: #9CA3AF;
-                font-weight: 500;
+                border: none;
+                background-color: transparent;
             """)
-            labels_row.addWidget(label)
+            grid.addWidget(label, 0, col)
 
-        details_layout.addLayout(labels_row)
-
-        # Second row: All values
-        values_row = QHBoxLayout()
-        values_row.setSpacing(24)
-
-        # Values (matching the labels order)
-        unit_type_val = unit.unit_type_display if hasattr(unit, 'unit_type_display') else unit.unit_type
-        status_val = unit.apartment_status_display if hasattr(unit, 'apartment_status_display') else unit.apartment_status or "-"
-        floor_val = str(unit.floor_number) if unit.floor_number is not None else "-"
-        rooms_val = str(getattr(unit, 'number_of_rooms', 0)) if hasattr(unit, 'number_of_rooms') else "-"
-        area_val = f"{unit.area_sqm} (م²)" if unit.area_sqm else "-"
-
-        values = [unit_display_num, unit_type_val, status_val, floor_val, rooms_val, area_val]
-        for value_text in values:
-            value = QLabel(str(value_text))
+            # Value
+            value = QLabel(value_text)
             value.setAlignment(Qt.AlignCenter)
             value.setStyleSheet("""
-                font-size: 13px;
-                color: #111827;
-                font-weight: 600;
-            """)
-            values_row.addWidget(value)
-
-        details_layout.addLayout(values_row)
-
-        # Description (if available)
-        if unit.property_description:
-            desc_label = QLabel(f"وصف القطار: {unit.property_description}")
-            desc_label.setStyleSheet("""
-                font-size: 12px;
                 color: #6B7280;
-                padding-top: 12px;
-                margin-top: 8px;
-                border-top: 1px solid #F3F4F6;
+                font-weight: 700;
+                font-size: 12px;
+                border: none;
+                background-color: transparent;
             """)
-            desc_label.setWordWrap(True)
-            details_layout.addWidget(desc_label)
+            grid.addWidget(value, 1, col)
 
-        card_layout.addWidget(details_frame)
+        card_layout.addLayout(grid)
+
+        # Dashed line separator
+        dash_line = QFrame()
+        dash_line.setObjectName("dashLine")
+        dash_line.setFixedHeight(1)
+        dash_line.setFrameShape(QFrame.HLine)
+        dash_line.setStyleSheet("""
+            QFrame#dashLine {
+                border: 0;
+                border-top: 1px dashed #D9E2F2;
+            }
+        """)
+        card_layout.addWidget(dash_line)
+
+        # Description section
+        desc_title = QLabel("وصف العقار")
+        desc_title.setStyleSheet("""
+            color: #111827;
+            font-weight: 900;
+            font-size: 12px;
+        """)
+        desc_title.setAlignment(Qt.AlignRight)
+        card_layout.addWidget(desc_title)
+
+        # Description text
+        desc_text = unit.property_description if unit.property_description else "وصف تفصيلي يشمل: عدد الغرف وأنواعها، المساحة التقريبية، الاتجاهات والحدود، وأي ميزات مميزة."
+        desc_label = QLabel(desc_text)
+        desc_label.setStyleSheet("""
+            color: #6B7280;
+            font-size: 11px;
+            line-height: 1.5;
+        """)
+        desc_label.setWordWrap(True)
+        desc_label.setAlignment(Qt.AlignRight)
+        card_layout.addWidget(desc_label)
 
         return card
 
@@ -3698,7 +3649,7 @@ class OfficeSurveyWizard(QWidget):
         self.household_building_metrics_layout.addWidget(self._create_metric_widget("عدد المحلات", num_shops))
 
     def _format_household_unit_info(self, unit):
-        """Format unit info for household step (reusing Step 2 format)."""
+        """Format unit info for household step with same layout as unit card."""
         # Clear existing widgets
         while self.household_unit_layout.count():
             child = self.household_unit_layout.takeAt(0)
@@ -3707,106 +3658,194 @@ class OfficeSurveyWizard(QWidget):
 
         unit_display_num = unit.unit_number or unit.apartment_number or "?"
 
-        # First row: All labels (50% smaller)
-        labels_row = QHBoxLayout()
-        labels_row.setSpacing(8)
+        # Get unit data
+        unit_type_val = unit.unit_type_display if hasattr(unit, 'unit_type_display') else unit.unit_type
+        status_val = unit.apartment_status_display if hasattr(unit, 'apartment_status_display') else unit.apartment_status or "جيدة"
+        floor_val = str(unit.floor_number) if unit.floor_number is not None else "-"
+        rooms_val = str(getattr(unit, 'number_of_rooms', 0)) if hasattr(unit, 'number_of_rooms') else "-"
+        area_val = f"{unit.area_sqm} (م²)" if unit.area_sqm else "120 (م²)"
 
-        # Labels (right to left in Arabic)
-        labels = ["رقم الوحدة", "نوع الوحدة", "حالة الوحدة", "رقم الطابق", "عدد الغرف", "مساحة القسم"]
-        for label_text in labels:
+        # Create grid layout for labels and values (6 columns)
+        grid = QGridLayout()
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setHorizontalSpacing(26)
+        grid.setVerticalSpacing(6)
+
+        # Define fields (RTL: first column appears on the right)
+        fields = [
+            ("رقم الوحدة", str(unit_display_num)),
+            ("رقم الطابق", floor_val),
+            ("عدد الغرف", rooms_val),
+            ("مساحة القسم", area_val),
+            ("نوع الوحدة", unit_type_val),
+            ("حالة الوحدة", status_val),
+        ]
+
+        # Add labels (row 0) and values (row 1)
+        for col, (label_text, value_text) in enumerate(fields):
+            # Label
             label = QLabel(label_text)
             label.setAlignment(Qt.AlignCenter)
             label.setStyleSheet("""
-                font-size: 8px;
-                color: #9CA3AF;
-                font-weight: 500;
+                color: #111827;
+                font-weight: 900;
+                font-size: 11px;
+                border: none;
+                background-color: transparent;
             """)
-            labels_row.addWidget(label)
+            grid.addWidget(label, 0, col)
 
-        self.household_unit_layout.addLayout(labels_row)
-
-        # Second row: All values (50% smaller)
-        values_row = QHBoxLayout()
-        values_row.setSpacing(8)
-
-        # Values (matching the labels order)
-        unit_type_val = unit.unit_type_display if hasattr(unit, 'unit_type_display') else unit.unit_type
-        status_val = unit.apartment_status_display if hasattr(unit, 'apartment_status_display') else unit.apartment_status or "-"
-        floor_val = str(unit.floor_number) if unit.floor_number is not None else "-"
-        rooms_val = str(getattr(unit, 'number_of_rooms', 0)) if hasattr(unit, 'number_of_rooms') else "-"
-        area_val = f"{unit.area_sqm} (م²)" if unit.area_sqm else "-"
-
-        values = [unit_display_num, unit_type_val, status_val, floor_val, rooms_val, area_val]
-        for value_text in values:
-            value = QLabel(str(value_text))
+            # Value
+            value = QLabel(value_text)
             value.setAlignment(Qt.AlignCenter)
             value.setStyleSheet("""
-                font-size: 9px;
-                color: #111827;
-                font-weight: 600;
+                color: #6B7280;
+                font-weight: 700;
+                font-size: 12px;
+                border: none;
+                background-color: transparent;
             """)
-            values_row.addWidget(value)
+            grid.addWidget(value, 1, col)
 
-        self.household_unit_layout.addLayout(values_row)
+        self.household_unit_layout.addLayout(grid)
+
+        # Dashed line separator
+        dash_line = QFrame()
+        dash_line.setObjectName("dashLine")
+        dash_line.setFixedHeight(1)
+        dash_line.setFrameShape(QFrame.HLine)
+        dash_line.setStyleSheet("""
+            QFrame#dashLine {
+                border: 0;
+                border-top: 1px dashed #D9E2F2;
+            }
+        """)
+        self.household_unit_layout.addWidget(dash_line)
+
+        # Description section
+        desc_title = QLabel("وصف العقار")
+        desc_title.setStyleSheet("""
+            color: #111827;
+            font-weight: 900;
+            font-size: 12px;
+        """)
+        desc_title.setAlignment(Qt.AlignRight)
+        self.household_unit_layout.addWidget(desc_title)
+
+        # Description text
+        desc_text = unit.property_description if unit.property_description else "وصف تفصيلي يشمل: عدد الغرف وأنواعها، المساحة التقريبية، الاتجاهات والحدود، وأي ميزات مميزة."
+        desc_label = QLabel(desc_text)
+        desc_label.setStyleSheet("""
+            color: #6B7280;
+            font-size: 11px;
+            line-height: 1.5;
+        """)
+        desc_label.setWordWrap(True)
+        desc_label.setAlignment(Qt.AlignRight)
+        self.household_unit_layout.addWidget(desc_label)
 
     def _format_household_new_unit_info(self, unit_data: dict):
-        """Format new unit info for household step (50% smaller than Step 2)."""
+        """Format new unit info for household step with same layout as unit card."""
         # Clear existing widgets
         while self.household_unit_layout.count():
             child = self.household_unit_layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
 
-        # First row: All labels
-        labels_row = QHBoxLayout()
-        labels_row.setSpacing(8)  # Reduced from 16px to 8px
-
-        # Labels (right to left in Arabic)
-        labels = ["رقم الوحدة", "نوع الوحدة", "حالة الوحدة", "رقم الطابق", "عدد الغرف", "مساحة القسم"]
-        for label_text in labels:
-            label = QLabel(label_text)
-            label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet("""
-                font-size: 8px;
-                color: #9CA3AF;
-                font-weight: 500;
-            """)
-            labels_row.addWidget(label)
-
-        self.household_unit_layout.addLayout(labels_row)
-
-        # Second row: All values
-        values_row = QHBoxLayout()
-        values_row.setSpacing(8)  # Reduced from 16px to 8px
-
         # Get unit type display name
         unit_types_map = {
             "apartment": "شقة", "shop": "محل تجاري", "office": "مكتب",
             "warehouse": "مستودع", "garage": "مرآب", "other": "أخرى"
         }
-        unit_type = unit_types_map.get(unit_data.get('unit_type', ''), unit_data.get('unit_type', '-'))
+        unit_type = unit_types_map.get(unit_data.get('unit_type', ''), unit_data.get('unit_type', 'شقة'))
 
         # Get status display name
         status_map = {"intact": "جيدة", "damaged": "متضررة", "destroyed": "مدمرة"}
-        status = status_map.get(unit_data.get('apartment_status', ''), unit_data.get('apartment_status', '-'))
+        status = status_map.get(unit_data.get('apartment_status', ''), unit_data.get('apartment_status', 'جيدة'))
 
         unit_num = str(unit_data.get('apartment_number', '-'))
         floor = str(unit_data.get('floor_number', '-'))
         rooms = str(unit_data.get('number_of_rooms', '-'))
-        area = f"{unit_data.get('area_sqm', '-')} (م²)" if unit_data.get('area_sqm') else "-"
+        area = f"{unit_data.get('area_sqm', '-')} (م²)" if unit_data.get('area_sqm') else "120 (م²)"
 
-        values = [unit_num, unit_type, status, floor, rooms, area]
-        for value_text in values:
-            value = QLabel(str(value_text))
+        # Create grid layout for labels and values (6 columns)
+        grid = QGridLayout()
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setHorizontalSpacing(26)
+        grid.setVerticalSpacing(6)
+
+        # Define fields (RTL: first column appears on the right)
+        fields = [
+            ("رقم الوحدة", unit_num),
+            ("رقم الطابق", floor),
+            ("عدد الغرف", rooms),
+            ("مساحة القسم", area),
+            ("نوع الوحدة", unit_type),
+            ("حالة الوحدة", status),
+        ]
+
+        # Add labels (row 0) and values (row 1)
+        for col, (label_text, value_text) in enumerate(fields):
+            # Label
+            label = QLabel(label_text)
+            label.setAlignment(Qt.AlignCenter)
+            label.setStyleSheet("""
+                color: #111827;
+                font-weight: 900;
+                font-size: 11px;
+                border: none;
+                background-color: transparent;
+            """)
+            grid.addWidget(label, 0, col)
+
+            # Value
+            value = QLabel(value_text)
             value.setAlignment(Qt.AlignCenter)
             value.setStyleSheet("""
-                font-size: 9px;
-                color: #111827;
-                font-weight: 600;
+                color: #6B7280;
+                font-weight: 700;
+                font-size: 12px;
+                border: none;
+                background-color: transparent;
             """)
-            values_row.addWidget(value)
+            grid.addWidget(value, 1, col)
 
-        self.household_unit_layout.addLayout(values_row)
+        self.household_unit_layout.addLayout(grid)
+
+        # Dashed line separator
+        dash_line = QFrame()
+        dash_line.setObjectName("dashLine")
+        dash_line.setFixedHeight(1)
+        dash_line.setFrameShape(QFrame.HLine)
+        dash_line.setStyleSheet("""
+            QFrame#dashLine {
+                border: 0;
+                border-top: 1px dashed #D9E2F2;
+            }
+        """)
+        self.household_unit_layout.addWidget(dash_line)
+
+        # Description section
+        desc_title = QLabel("وصف العقار")
+        desc_title.setStyleSheet("""
+            color: #111827;
+            font-weight: 900;
+            font-size: 12px;
+        """)
+        desc_title.setAlignment(Qt.AlignRight)
+        self.household_unit_layout.addWidget(desc_title)
+
+        # Description text
+        desc_text = unit_data.get('description', "وصف تفصيلي يشمل: عدد الغرف وأنواعها، المساحة التقريبية، الاتجاهات والحدود، وأي ميزات مميزة.")
+        desc_label = QLabel(desc_text)
+        desc_label.setStyleSheet("""
+            color: #6B7280;
+            font-size: 11px;
+            line-height: 1.5;
+        """)
+        desc_label.setWordWrap(True)
+        desc_label.setAlignment(Qt.AlignRight)
+        self.household_unit_layout.addWidget(desc_label)
 
     def _create_info_item(self, label: str, value: str) -> QWidget:
         """Create a compact info item (label + value)."""
