@@ -26,7 +26,8 @@ from PyQt5.QtWidgets import (
     QGroupBox, QScrollArea, QSplitter, QMessageBox,
     QDialog, QFileDialog, QDateEdit, QCheckBox,
     QGraphicsDropShadowEffect, QRadioButton, QButtonGroup,
-    QTabWidget, QGridLayout, QSizePolicy, QToolButton, QLayout
+    QTabWidget, QGridLayout, QSizePolicy, QToolButton, QLayout,
+    QMenu
 )
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, pyqtSignal, QDate
@@ -284,6 +285,443 @@ class AddEvidenceDialog(QDialog):
             evidence.file_name = Path(self.selected_file).name
         evidence.notes = self.notes_edit.toPlainText().strip() or None
         return evidence
+
+
+# ============================================================================
+# Person Dialog
+# ============================================================================
+
+class PersonDialog(QDialog):
+    """Dialog for adding/editing person information."""
+
+    def __init__(self, parent=None, person_data: dict = None, households: list = None, existing_persons: list = None):
+        super().__init__(parent)
+        self.person_data = person_data
+        self.households = households or []
+        self.existing_persons = existing_persons or []
+        self.editing_mode = person_data is not None
+
+        self.setWindowTitle("تعديل بيانات الشخص" if self.editing_mode else "إضافة شخص جديد")
+        self.setModal(True)
+        self.setMinimumWidth(500)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: white;
+            }
+        """)
+
+        self._setup_ui()
+
+        if self.editing_mode and person_data:
+            self._load_person_data(person_data)
+
+    def _setup_ui(self):
+        """Setup dialog UI."""
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(20)
+
+        # Title
+        title = QLabel("تعديل بيانات الشخص" if self.editing_mode else "إضافة شخص جديد")
+        title.setStyleSheet("font-size: 18px; font-weight: 700; color: #111827;")
+        title.setAlignment(Qt.AlignRight)
+        layout.addWidget(title)
+
+        # Form container
+        form_widget = QWidget()
+        form_container = QVBoxLayout(form_widget)
+        form_container.setSpacing(16)
+        form_container.setContentsMargins(0, 0, 0, 0)
+
+        # Row 1: First name and Last name (2 columns)
+        row1 = QHBoxLayout()
+        row1.setSpacing(12)
+
+        # First name (right side)
+        first_name_container = QVBoxLayout()
+        first_name_container.setSpacing(6)
+        first_name_label = QLabel("الاسم الأول")
+        first_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        first_name_label.setAlignment(Qt.AlignRight)
+        self.first_name = QLineEdit()
+        self.first_name.setPlaceholderText("ادخل الاسم الأول")
+        self.first_name.setStyleSheet(self._input_style())
+        first_name_container.addWidget(first_name_label)
+        first_name_container.addWidget(self.first_name)
+
+        # Last name (left side)
+        last_name_container = QVBoxLayout()
+        last_name_container.setSpacing(6)
+        last_name_label = QLabel("الكنية")
+        last_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        last_name_label.setAlignment(Qt.AlignRight)
+        self.last_name = QLineEdit()
+        self.last_name.setPlaceholderText("ادخل اسم العائلة")
+        self.last_name.setStyleSheet(self._input_style())
+        last_name_container.addWidget(last_name_label)
+        last_name_container.addWidget(self.last_name)
+
+        row1.addLayout(last_name_container)
+        row1.addLayout(first_name_container)
+        form_container.addLayout(row1)
+
+        # Row 2: Father name and Mother name (2 columns)
+        row2 = QHBoxLayout()
+        row2.setSpacing(12)
+
+        # Mother name (right side)
+        mother_name_container = QVBoxLayout()
+        mother_name_container.setSpacing(6)
+        mother_name_label = QLabel("اسم الأم")
+        mother_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        mother_name_label.setAlignment(Qt.AlignRight)
+        self.mother_name = QLineEdit()
+        self.mother_name.setPlaceholderText("ادخل اسم الأم")
+        self.mother_name.setStyleSheet(self._input_style())
+        mother_name_container.addWidget(mother_name_label)
+        mother_name_container.addWidget(self.mother_name)
+
+        # Father name (left side)
+        father_name_container = QVBoxLayout()
+        father_name_container.setSpacing(6)
+        father_name_label = QLabel("اسم الأب")
+        father_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        father_name_label.setAlignment(Qt.AlignRight)
+        self.father_name = QLineEdit()
+        self.father_name.setPlaceholderText("ادخل اسم الأب")
+        self.father_name.setStyleSheet(self._input_style())
+        father_name_container.addWidget(father_name_label)
+        father_name_container.addWidget(self.father_name)
+
+        row2.addLayout(mother_name_container)
+        row2.addLayout(father_name_container)
+        form_container.addLayout(row2)
+
+        # Row 3: Birth date and National ID (2 columns)
+        row3 = QHBoxLayout()
+        row3.setSpacing(12)
+
+        # Birth date (right side)
+        birth_date_container = QVBoxLayout()
+        birth_date_container.setSpacing(6)
+        birth_date_label = QLabel("تاريخ الميلاد")
+        birth_date_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        birth_date_label.setAlignment(Qt.AlignRight)
+        self.birth_date = QDateEdit()
+        self.birth_date.setCalendarPopup(True)
+        self.birth_date.setDate(QDate(1980, 1, 1))
+        self.birth_date.setDisplayFormat("yyyy-MM-dd")
+        self.birth_date.setStyleSheet(self._input_style())
+        birth_date_container.addWidget(birth_date_label)
+        birth_date_container.addWidget(self.birth_date)
+
+        # National ID (left side)
+        national_id_container = QVBoxLayout()
+        national_id_container.setSpacing(6)
+        national_id_label = QLabel("الرقم الوطني")
+        national_id_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        national_id_label.setAlignment(Qt.AlignRight)
+
+        national_id_widget = QWidget()
+        national_id_layout = QHBoxLayout(national_id_widget)
+        national_id_layout.setContentsMargins(0, 0, 0, 0)
+        national_id_layout.setSpacing(8)
+
+        self.national_id = QLineEdit()
+        self.national_id.setPlaceholderText("00000000000")
+        self.national_id.setMaxLength(11)
+        self.national_id.setStyleSheet(self._input_style())
+        self.national_id.textChanged.connect(self._validate_national_id)
+
+        # Calendar icon button
+        calendar_btn = QPushButton()
+        calendar_btn.setIcon(QIcon())
+        calendar_btn.setText("📅")
+        calendar_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: 1px solid #E5E7EB;
+                border-radius: 6px;
+                padding: 8px 12px;
+                font-size: 16px;
+            }
+        """)
+
+        national_id_layout.addWidget(self.national_id)
+        national_id_layout.addWidget(calendar_btn)
+
+        national_id_container.addWidget(national_id_label)
+        national_id_container.addWidget(national_id_widget)
+
+        row3.addLayout(national_id_container)
+        row3.addLayout(birth_date_container)
+        form_container.addLayout(row3)
+
+        # National ID status
+        self.national_id_status = QLabel("")
+        self.national_id_status.setAlignment(Qt.AlignRight)
+        form_container.addWidget(self.national_id_status)
+
+        # Row 4: Email and Gender (2 columns)
+        row4 = QHBoxLayout()
+        row4.setSpacing(12)
+
+        # Email (right side)
+        email_container = QVBoxLayout()
+        email_container.setSpacing(6)
+        email_label = QLabel("البريد الالكتروني")
+        email_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        email_label.setAlignment(Qt.AlignRight)
+        self.email = QLineEdit()
+        self.email.setPlaceholderText("*****@gmail.com")
+        self.email.setStyleSheet(self._input_style())
+        email_container.addWidget(email_label)
+        email_container.addWidget(self.email)
+
+        # Gender/Household (left side) - using household dropdown as shown in photo
+        household_container = QVBoxLayout()
+        household_container.setSpacing(6)
+        household_label = QLabel("علاقة الشخص بوحدة العقار")
+        household_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        household_label.setAlignment(Qt.AlignRight)
+        self.household_combo = QComboBox()
+        self.household_combo.addItem("اختر", None)
+        for hh in self.households:
+            self.household_combo.addItem(f"👨‍👩‍👧‍👦 {hh['head_name']}", hh['household_id'])
+        self.household_combo.setStyleSheet(self._input_style())
+        household_container.addWidget(household_label)
+        household_container.addWidget(self.household_combo)
+
+        row4.addLayout(household_container)
+        row4.addLayout(email_container)
+        form_container.addLayout(row4)
+
+        # Row 5: Mobile and Landline (2 columns)
+        row5 = QHBoxLayout()
+        row5.setSpacing(12)
+
+        # Mobile (right side)
+        mobile_container = QVBoxLayout()
+        mobile_container.setSpacing(6)
+        mobile_label = QLabel("رقم الموبايل")
+        mobile_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        mobile_label.setAlignment(Qt.AlignRight)
+
+        mobile_widget = QWidget()
+        mobile_layout = QHBoxLayout(mobile_widget)
+        mobile_layout.setContentsMargins(0, 0, 0, 0)
+        mobile_layout.setSpacing(8)
+
+        self.phone = QLineEdit()
+        self.phone.setPlaceholderText("09")
+        self.phone.setStyleSheet(self._input_style())
+
+        country_code = QLineEdit()
+        country_code.setText("+963")
+        country_code.setReadOnly(True)
+        country_code.setMaximumWidth(60)
+        country_code.setStyleSheet(self._input_style())
+
+        mobile_layout.addWidget(self.phone)
+        mobile_layout.addWidget(country_code)
+
+        mobile_container.addWidget(mobile_label)
+        mobile_container.addWidget(mobile_widget)
+
+        # Landline (left side)
+        landline_container = QVBoxLayout()
+        landline_container.setSpacing(6)
+        landline_label = QLabel("رقم الهاتف")
+        landline_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        landline_label.setAlignment(Qt.AlignRight)
+        self.landline = QLineEdit()
+        self.landline.setPlaceholderText("0000000")
+        self.landline.setStyleSheet(self._input_style())
+        landline_container.addWidget(landline_label)
+        landline_container.addWidget(self.landline)
+
+        row5.addLayout(landline_container)
+        row5.addLayout(mobile_container)
+        form_container.addLayout(row5)
+
+        # Gender (hidden but kept for compatibility)
+        self.gender = QComboBox()
+        self.gender.addItem("ذكر", "male")
+        self.gender.addItem("أنثى", "female")
+        self.gender.hide()
+
+        # Additional info section with icon
+        additional_info = QHBoxLayout()
+        additional_info.setSpacing(8)
+
+        info_icon = QLabel("📄")
+        info_icon.setStyleSheet("font-size: 18px;")
+
+        info_link = QLabel('<a href="#" style="color: #0072BC; text-decoration: none;">ارفع صور المستندات</a>')
+        info_link.setStyleSheet("font-size: 13px;")
+        info_link.setAlignment(Qt.AlignRight)
+
+        additional_info.addStretch()
+        additional_info.addWidget(info_link)
+        additional_info.addWidget(info_icon)
+
+        form_container.addLayout(additional_info)
+
+        # Is contact person
+        self.is_contact = QCheckBox("شخص التواصل الرئيسي")
+        self.is_contact.hide()  # Hide for now as not shown in photo
+
+        layout.addWidget(form_widget)
+
+        # Buttons
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(12)
+
+        cancel_btn = QPushButton("إلغاء")
+        cancel_btn.setStyleSheet("""
+            QPushButton {
+                background-color: white;
+                color: #374151;
+                border: 1px solid #D1D5DB;
+                border-radius: 8px;
+                padding: 12px 32px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #F9FAFB;
+            }
+        """)
+        cancel_btn.clicked.connect(self.reject)
+
+        save_btn = QPushButton("التالي")
+        save_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Config.PRIMARY_COLOR};
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 12px 32px;
+                font-size: 14px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: #0056A3;
+            }}
+        """)
+        save_btn.clicked.connect(self._save_person)
+
+        buttons_layout.addWidget(cancel_btn, 1)
+        buttons_layout.addWidget(save_btn, 1)
+
+        layout.addLayout(buttons_layout)
+
+    def _input_style(self):
+        """Return standard input style."""
+        return """
+            QLineEdit, QComboBox, QDateEdit, QSpinBox {
+                padding: 8px 12px;
+                border: 1px solid #E5E7EB;
+                border-radius: 6px;
+                background-color: #F9FAFB;
+                font-size: 12px;
+            }
+            QLineEdit:focus, QComboBox:focus, QDateEdit:focus {
+                border: 1px solid #0072BC;
+                background-color: white;
+            }
+        """
+
+    def _validate_national_id(self):
+        """Validate national ID."""
+        nid = self.national_id.text().strip()
+
+        if not nid:
+            self.national_id_status.setText("")
+            return True
+
+        if len(nid) != 11 or not nid.isdigit():
+            self.national_id_status.setText("⚠️ يجب أن يكون 11 رقم")
+            self.national_id_status.setStyleSheet(f"color: {Config.WARNING_COLOR};")
+            return False
+
+        # Check if ID exists in other persons (skip current if editing)
+        for person in self.existing_persons:
+            if person.get('national_id') == nid:
+                if self.editing_mode and self.person_data and person['person_id'] == self.person_data.get('person_id'):
+                    continue
+                self.national_id_status.setText("❌ الرقم موجود مسبقاً")
+                self.national_id_status.setStyleSheet(f"color: {Config.ERROR_COLOR};")
+                return False
+
+        self.national_id_status.setText("✅ الرقم متاح")
+        self.national_id_status.setStyleSheet(f"color: {Config.SUCCESS_COLOR};")
+        return True
+
+    def _load_person_data(self, person_data: dict):
+        """Load person data into form."""
+        self.first_name.setText(person_data.get('first_name', ''))
+        self.father_name.setText(person_data.get('father_name', ''))
+        self.mother_name.setText(person_data.get('mother_name', ''))
+        self.last_name.setText(person_data.get('last_name', ''))
+        self.national_id.setText(person_data.get('national_id', ''))
+        self.phone.setText(person_data.get('phone', ''))
+        self.email.setText(person_data.get('email', ''))
+        self.landline.setText(person_data.get('landline', ''))
+
+        # Gender
+        gender = person_data.get('gender', 'male')
+        idx = self.gender.findData(gender)
+        if idx >= 0:
+            self.gender.setCurrentIndex(idx)
+
+        # Birth date
+        if person_data.get('birth_date'):
+            bd = QDate.fromString(person_data['birth_date'], 'yyyy-MM-dd')
+            if bd.isValid():
+                self.birth_date.setDate(bd)
+
+        # Household
+        hh_id = person_data.get('household_id')
+        idx = self.household_combo.findData(hh_id)
+        if idx >= 0:
+            self.household_combo.setCurrentIndex(idx)
+
+        self.is_contact.setChecked(person_data.get('is_contact_person', False))
+
+    def _save_person(self):
+        """Validate and save person data."""
+        # Validation
+        if not self.first_name.text().strip():
+            Toast.show_toast(self, "الرجاء إدخال الاسم الأول", Toast.WARNING)
+            return
+
+        if not self.last_name.text().strip():
+            Toast.show_toast(self, "الرجاء إدخال اسم العائلة", Toast.WARNING)
+            return
+
+        # Validate national ID
+        if self.national_id.text().strip() and not self._validate_national_id():
+            return
+
+        self.accept()
+
+    def get_person_data(self) -> dict:
+        """Get person data from form."""
+        return {
+            'first_name': self.first_name.text().strip(),
+            'father_name': self.father_name.text().strip(),
+            'mother_name': self.mother_name.text().strip(),
+            'last_name': self.last_name.text().strip(),
+            'national_id': self.national_id.text().strip() or None,
+            'gender': self.gender.currentData(),
+            'birth_date': self.birth_date.date().toString('yyyy-MM-dd'),
+            'phone': self.phone.text().strip() or None,
+            'email': self.email.text().strip() or None,
+            'landline': self.landline.text().strip() or None,
+            'household_id': self.household_combo.currentData(),
+            'is_contact_person': self.is_contact.isChecked()
+        }
 
 
 # ============================================================================
@@ -1583,6 +2021,7 @@ class OfficeSurveyWizard(QWidget):
         """)
         card.setCursor(Qt.PointingHandCursor)
         card.mousePressEvent = lambda _: self._on_unit_card_clicked(unit)
+        card.setLayoutDirection(Qt.RightToLeft)
 
         card_layout = QVBoxLayout(card)
         card_layout.setSpacing(10)
@@ -1611,8 +2050,11 @@ class OfficeSurveyWizard(QWidget):
             ("حالة الوحدة", status_val),
         ]
 
-        # Add labels (row 0) and values (row 1)
-        for col, (label_text, value_text) in enumerate(fields):
+        # Add labels (row 0) and values (row 1) - starting from rightmost column (column 5)
+        for idx, (label_text, value_text) in enumerate(fields):
+            # Calculate column position from right (5, 4, 3, 2, 1, 0)
+            col = 5 - idx  # This ensures first item goes to column 5 (rightmost)
+
             # Label
             label = QLabel(label_text)
             label.setAlignment(Qt.AlignCenter)
@@ -1639,39 +2081,30 @@ class OfficeSurveyWizard(QWidget):
 
         card_layout.addLayout(grid)
 
-        # Dashed line separator
-        dash_line = QFrame()
-        dash_line.setObjectName("dashLine")
-        dash_line.setFixedHeight(1)
-        dash_line.setFrameShape(QFrame.HLine)
-        dash_line.setStyleSheet("""
-            QFrame#dashLine {
-                border: 0;
-                border-top: 1px dashed #D9E2F2;
-            }
-        """)
-        card_layout.addWidget(dash_line)
-
-        # Description section
+        # Description section (no border, no dashed line)
         desc_title = QLabel("وصف العقار")
         desc_title.setStyleSheet("""
             color: #111827;
-            font-weight: 900;
-            font-size: 12px;
+            font-weight: 700;
+            font-size: 11px;
+            margin-top: 8px;
+            border: none;
+            background-color: transparent;
         """)
-        desc_title.setAlignment(Qt.AlignRight)
+        desc_title.setAlignment(Qt.AlignRight | Qt.AlignRight)  # Force RTL alignment
         card_layout.addWidget(desc_title)
 
         # Description text
         desc_text = unit.property_description if unit.property_description else "وصف تفصيلي يشمل: عدد الغرف وأنواعها، المساحة التقريبية، الاتجاهات والحدود، وأي ميزات مميزة."
         desc_label = QLabel(desc_text)
         desc_label.setStyleSheet("""
-            color: #6B7280;
+            color: #9CA3AF;
             font-size: 11px;
-            line-height: 1.5;
+            border: none;
+            background-color: transparent;
         """)
         desc_label.setWordWrap(True)
-        desc_label.setAlignment(Qt.AlignRight)
+        desc_label.setAlignment(Qt.AlignRight | Qt.AlignRight)  # Force RTL alignment
         card_layout.addWidget(desc_label)
 
         return card
@@ -2141,28 +2574,9 @@ class OfficeSurveyWizard(QWidget):
         family_info_grid.setColumnStretch(0, 1)
         family_info_grid.setColumnStretch(1, 1)
 
-        # Right side: رب الأسرة/العائل (column 0 for RTL)
-        head_name_label = QLabel("رب الأسرة/العائل")
-        head_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px;")
-        head_name_label.setAlignment(Qt.AlignRight)
-        family_info_grid.addWidget(head_name_label, 0, 0)
-
-        self.hh_head_name = QLineEdit()
-        self.hh_head_name.setPlaceholderText("اسم رب الأسرة")
-        self.hh_head_name.setStyleSheet("""
-            QLineEdit {
-                padding: 8px 12px;
-                border: 1px solid #E5E7EB;
-                border-radius: 6px;
-                background-color: #F9FAFB;
-                font-size: 12px;
-            }
-        """)
-        family_info_grid.addWidget(self.hh_head_name, 1, 0)
-
-        # Left side: عدد الأفراد (column 1 for RTL)
+        # Right side (RTL): عدد الأفراد should appear on right (column 1)
         total_members_label = QLabel("عدد الأفراد")
-        total_members_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px;")
+        total_members_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px; border: none; background-color: transparent;")
         total_members_label.setAlignment(Qt.AlignRight)
         family_info_grid.addWidget(total_members_label, 0, 1)
 
@@ -2179,6 +2593,25 @@ class OfficeSurveyWizard(QWidget):
             }
         """)
         family_info_grid.addWidget(self.hh_total_members, 1, 1)
+
+        # Left side (RTL): رب الأسرة/العائل should appear on left (column 0)
+        head_name_label = QLabel("رب الأسرة/العائل")
+        head_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px; border: none; background-color: transparent;")
+        head_name_label.setAlignment(Qt.AlignRight)
+        family_info_grid.addWidget(head_name_label, 0, 0)
+
+        self.hh_head_name = QLineEdit()
+        self.hh_head_name.setPlaceholderText("اسم رب الأسرة")
+        self.hh_head_name.setStyleSheet("""
+            QLineEdit {
+                padding: 8px 12px;
+                border: 1px solid #E5E7EB;
+                border-radius: 6px;
+                background-color: #F9FAFB;
+                font-size: 12px;
+            }
+        """)
+        family_info_grid.addWidget(self.hh_head_name, 1, 0)
 
         family_info_layout.addLayout(family_info_grid)
         scroll_layout.addWidget(family_info_frame)
@@ -2212,7 +2645,7 @@ class OfficeSurveyWizard(QWidget):
         composition_grid.setColumnStretch(0, 1)
         composition_grid.setColumnStretch(1, 1)
 
-        label_style = "font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px;"
+        label_style = "font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px; border: none; background-color: transparent;"
         spinbox_style = """
             QSpinBox {
                 padding: 8px 12px;
@@ -2223,19 +2656,7 @@ class OfficeSurveyWizard(QWidget):
             }
         """
 
-        # Row 0-1: عدد البالغين الذكور (RIGHT side, column 0)
-        adult_males_label = QLabel("عدد البالغين الذكور")
-        adult_males_label.setStyleSheet(label_style)
-        adult_males_label.setAlignment(Qt.AlignRight)
-        composition_grid.addWidget(adult_males_label, 0, 0)
-
-        self.hh_adult_males = QSpinBox()
-        self.hh_adult_males.setRange(0, 50)
-        self.hh_adult_males.setValue(0)
-        self.hh_adult_males.setStyleSheet(spinbox_style)
-        composition_grid.addWidget(self.hh_adult_males, 1, 0)
-
-        # Row 0-1: عدد البالغين الإناث (LEFT side, column 1)
+        # Row 0-1: عدد البالغين الإناث (RIGHT side for RTL, column 1)
         adult_females_label = QLabel("عدد البالغين الإناث")
         adult_females_label.setStyleSheet(label_style)
         adult_females_label.setAlignment(Qt.AlignRight)
@@ -2247,19 +2668,19 @@ class OfficeSurveyWizard(QWidget):
         self.hh_adult_females.setStyleSheet(spinbox_style)
         composition_grid.addWidget(self.hh_adult_females, 1, 1)
 
-        # Row 2-3: عدد الأطفال الذكور (أقل من 18) (RIGHT side, column 0)
-        male_children_label = QLabel("عدد الأطفال الذكور (أقل من 18)")
-        male_children_label.setStyleSheet(label_style)
-        male_children_label.setAlignment(Qt.AlignRight)
-        composition_grid.addWidget(male_children_label, 2, 0)
+        # Row 0-1: عدد البالغين الذكور (LEFT side for RTL, column 0)
+        adult_males_label = QLabel("عدد البالغين الذكور")
+        adult_males_label.setStyleSheet(label_style)
+        adult_males_label.setAlignment(Qt.AlignRight)
+        composition_grid.addWidget(adult_males_label, 0, 0)
 
-        self.hh_male_children_under18 = QSpinBox()
-        self.hh_male_children_under18.setRange(0, 50)
-        self.hh_male_children_under18.setValue(0)
-        self.hh_male_children_under18.setStyleSheet(spinbox_style)
-        composition_grid.addWidget(self.hh_male_children_under18, 3, 0)
+        self.hh_adult_males = QSpinBox()
+        self.hh_adult_males.setRange(0, 50)
+        self.hh_adult_males.setValue(0)
+        self.hh_adult_males.setStyleSheet(spinbox_style)
+        composition_grid.addWidget(self.hh_adult_males, 1, 0)
 
-        # Row 2-3: عدد الأطفال الإناث (أقل من 18) (LEFT side, column 1)
+        # Row 2-3: عدد الأطفال الإناث (أقل من 18) (RIGHT side for RTL, column 1)
         female_children_label = QLabel("عدد الأطفال الإناث (أقل من 18)")
         female_children_label.setStyleSheet(label_style)
         female_children_label.setAlignment(Qt.AlignRight)
@@ -2271,19 +2692,19 @@ class OfficeSurveyWizard(QWidget):
         self.hh_female_children_under18.setStyleSheet(spinbox_style)
         composition_grid.addWidget(self.hh_female_children_under18, 3, 1)
 
-        # Row 4-5: عدد كبار السن الذكور (أكبر من 65) (RIGHT side, column 0)
-        male_elderly_label = QLabel("عدد كبار السن الذكور (أكبر من 65)")
-        male_elderly_label.setStyleSheet(label_style)
-        male_elderly_label.setAlignment(Qt.AlignRight)
-        composition_grid.addWidget(male_elderly_label, 4, 0)
+        # Row 2-3: عدد الأطفال الذكور (أقل من 18) (LEFT side for RTL, column 0)
+        male_children_label = QLabel("عدد الأطفال الذكور (أقل من 18)")
+        male_children_label.setStyleSheet(label_style)
+        male_children_label.setAlignment(Qt.AlignRight)
+        composition_grid.addWidget(male_children_label, 2, 0)
 
-        self.hh_male_elderly_over65 = QSpinBox()
-        self.hh_male_elderly_over65.setRange(0, 50)
-        self.hh_male_elderly_over65.setValue(0)
-        self.hh_male_elderly_over65.setStyleSheet(spinbox_style)
-        composition_grid.addWidget(self.hh_male_elderly_over65, 5, 0)
+        self.hh_male_children_under18 = QSpinBox()
+        self.hh_male_children_under18.setRange(0, 50)
+        self.hh_male_children_under18.setValue(0)
+        self.hh_male_children_under18.setStyleSheet(spinbox_style)
+        composition_grid.addWidget(self.hh_male_children_under18, 3, 0)
 
-        # Row 4-5: عدد كبار السن الإناث (أكبر من 65) (LEFT side, column 1)
+        # Row 4-5: عدد كبار السن الإناث (أكبر من 65) (RIGHT side for RTL, column 1)
         female_elderly_label = QLabel("عدد كبار السن الإناث (أكبر من 65)")
         female_elderly_label.setStyleSheet(label_style)
         female_elderly_label.setAlignment(Qt.AlignRight)
@@ -2295,19 +2716,19 @@ class OfficeSurveyWizard(QWidget):
         self.hh_female_elderly_over65.setStyleSheet(spinbox_style)
         composition_grid.addWidget(self.hh_female_elderly_over65, 5, 1)
 
-        # Row 6-7: عدد المعاقين الذكور (RIGHT side, column 0)
-        disabled_males_label = QLabel("عدد المعاقين الذكور")
-        disabled_males_label.setStyleSheet(label_style)
-        disabled_males_label.setAlignment(Qt.AlignRight)
-        composition_grid.addWidget(disabled_males_label, 6, 0)
+        # Row 4-5: عدد كبار السن الذكور (أكبر من 65) (LEFT side for RTL, column 0)
+        male_elderly_label = QLabel("عدد كبار السن الذكور (أكبر من 65)")
+        male_elderly_label.setStyleSheet(label_style)
+        male_elderly_label.setAlignment(Qt.AlignRight)
+        composition_grid.addWidget(male_elderly_label, 4, 0)
 
-        self.hh_disabled_males = QSpinBox()
-        self.hh_disabled_males.setRange(0, 50)
-        self.hh_disabled_males.setValue(0)
-        self.hh_disabled_males.setStyleSheet(spinbox_style)
-        composition_grid.addWidget(self.hh_disabled_males, 7, 0)
+        self.hh_male_elderly_over65 = QSpinBox()
+        self.hh_male_elderly_over65.setRange(0, 50)
+        self.hh_male_elderly_over65.setValue(0)
+        self.hh_male_elderly_over65.setStyleSheet(spinbox_style)
+        composition_grid.addWidget(self.hh_male_elderly_over65, 5, 0)
 
-        # Row 6-7: عدد المعاقين الإناث (LEFT side, column 1)
+        # Row 6-7: عدد المعاقين الإناث (RIGHT side for RTL, column 1)
         disabled_females_label = QLabel("عدد المعاقين الإناث")
         disabled_females_label.setStyleSheet(label_style)
         disabled_females_label.setAlignment(Qt.AlignRight)
@@ -2318,6 +2739,18 @@ class OfficeSurveyWizard(QWidget):
         self.hh_disabled_females.setValue(0)
         self.hh_disabled_females.setStyleSheet(spinbox_style)
         composition_grid.addWidget(self.hh_disabled_females, 7, 1)
+
+        # Row 6-7: عدد المعاقين الذكور (LEFT side for RTL, column 0)
+        disabled_males_label = QLabel("عدد المعاقين الذكور")
+        disabled_males_label.setStyleSheet(label_style)
+        disabled_males_label.setAlignment(Qt.AlignRight)
+        composition_grid.addWidget(disabled_males_label, 6, 0)
+
+        self.hh_disabled_males = QSpinBox()
+        self.hh_disabled_males.setRange(0, 50)
+        self.hh_disabled_males.setValue(0)
+        self.hh_disabled_males.setStyleSheet(spinbox_style)
+        composition_grid.addWidget(self.hh_disabled_males, 7, 0)
 
         composition_layout.addLayout(composition_grid)
         scroll_layout.addWidget(composition_frame)
@@ -2487,269 +2920,236 @@ class OfficeSurveyWizard(QWidget):
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(16)
 
-        # Splitter for list and form
-        splitter = QSplitter(Qt.Horizontal)
+        # Persons table container
+        table_frame = QFrame()
+        table_frame.setStyleSheet("""
+            QFrame {
+                background-color: white;
+                border: 1px solid #E5E7EB;
+                border-radius: 8px;
+            }
+        """)
+        table_layout = QVBoxLayout(table_frame)
+        table_layout.setContentsMargins(16, 16, 16, 16)
+        table_layout.setSpacing(12)
 
-        # Left: Persons list
-        list_frame = QFrame()
-        list_layout = QVBoxLayout(list_frame)
-
+        # Header with title and add button
         persons_header = QHBoxLayout()
-        persons_label = QLabel("الأشخاص المسجلون:")
-        persons_label.setStyleSheet("font-weight: bold; font-size: 11pt;")
+
+        persons_label = QLabel("بيانات الأشخاص")
+        persons_label.setStyleSheet("font-weight: 700; font-size: 13px; color: #1F2937;")
         persons_header.addWidget(persons_label)
         persons_header.addStretch()
 
-        add_person_btn = QPushButton("+ إضافة شخص")
+        add_person_btn = QPushButton("+ إضافة شخص جديد")
         add_person_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {Config.SUCCESS_COLOR};
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 8px 16px;
-            }}
-        """)
-        add_person_btn.clicked.connect(self._add_person)
-        persons_header.addWidget(add_person_btn)
-
-        list_layout.addLayout(persons_header)
-
-        self.persons_list = QListWidget()
-        self.persons_list.setStyleSheet("""
-            QListWidget::item { padding: 12px; }
-            QListWidget::item:selected { background-color: #DBEAFE; }
-        """)
-        self.persons_list.itemClicked.connect(self._on_person_selected)
-        list_layout.addWidget(self.persons_list)
-
-        # Delete person button
-        del_person_btn = QPushButton("🗑️ حذف الشخص المحدد")
-        del_person_btn.clicked.connect(self._delete_person)
-        list_layout.addWidget(del_person_btn)
-
-        splitter.addWidget(list_frame)
-
-        # Right: Person form
-        form_frame = QFrame()
-        form_frame.setStyleSheet("background-color: #F8FAFC; border-radius: 8px; padding: 12px;")
-        form_layout = QVBoxLayout(form_frame)
-
-        self.person_form_title = QLabel("إضافة شخص جديد")
-        self.person_form_title.setStyleSheet("font-weight: bold; font-size: 11pt;")
-        form_layout.addWidget(self.person_form_title)
-
-        pf_layout = QFormLayout()
-        pf_layout.setSpacing(10)
-
-        self.person_first_name = QLineEdit()
-        self.person_first_name.setPlaceholderText("الاسم الأول *")
-        pf_layout.addRow("الاسم الأول:", self.person_first_name)
-
-        self.person_father_name = QLineEdit()
-        self.person_father_name.setPlaceholderText("اسم الأب")
-        pf_layout.addRow("اسم الأب:", self.person_father_name)
-
-        self.person_last_name = QLineEdit()
-        self.person_last_name.setPlaceholderText("اسم العائلة *")
-        pf_layout.addRow("اسم العائلة:", self.person_last_name)
-
-        self.person_national_id = QLineEdit()
-        self.person_national_id.setPlaceholderText("11 رقم")
-        self.person_national_id.setMaxLength(11)
-        self.person_national_id.textChanged.connect(self._validate_national_id)
-        pf_layout.addRow("الرقم الوطني:", self.person_national_id)
-
-        # National ID validation indicator (Medium priority gap)
-        self.national_id_status = QLabel("")
-        pf_layout.addRow("", self.national_id_status)
-
-        self.person_gender = QComboBox()
-        self.person_gender.addItem("ذكر", "male")
-        self.person_gender.addItem("أنثى", "female")
-        pf_layout.addRow("الجنس:", self.person_gender)
-
-        self.person_birth_date = QDateEdit()
-        self.person_birth_date.setCalendarPopup(True)
-        self.person_birth_date.setDate(QDate(1980, 1, 1))
-        self.person_birth_date.setDisplayFormat("yyyy-MM-dd")
-        pf_layout.addRow("تاريخ الميلاد:", self.person_birth_date)
-
-        self.person_phone = QLineEdit()
-        self.person_phone.setPlaceholderText("رقم الهاتف")
-        pf_layout.addRow("الهاتف:", self.person_phone)
-
-        # Link to household
-        self.person_household_combo = QComboBox()
-        self.person_household_combo.addItem("-- غير مرتبط --", None)
-        pf_layout.addRow("الأسرة:", self.person_household_combo)
-
-        self.person_is_contact = QCheckBox("شخص التواصل الرئيسي")
-        pf_layout.addRow("", self.person_is_contact)
-
-        form_layout.addLayout(pf_layout)
-
-        # Save button
-        save_person_btn = QPushButton("💾 حفظ بيانات الشخص")
-        save_person_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {Config.PRIMARY_COLOR};
                 color: white;
                 border: none;
                 border-radius: 6px;
-                padding: 10px;
-                font-weight: bold;
+                padding: 8px 16px;
+                font-size: 12px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: #0056A3;
             }}
         """)
-        save_person_btn.clicked.connect(self._save_person)
-        form_layout.addWidget(save_person_btn)
+        add_person_btn.clicked.connect(self._add_person)
+        persons_header.addWidget(add_person_btn)
 
-        form_layout.addStretch()
-        splitter.addWidget(form_frame)
+        table_layout.addLayout(persons_header)
 
-        splitter.setSizes([350, 400])
-        layout.addWidget(splitter)
+        # Scroll area for person cards
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+        """)
+
+        scroll_widget = QWidget()
+        self.persons_table_layout = QVBoxLayout(scroll_widget)
+        self.persons_table_layout.setSpacing(0)
+        self.persons_table_layout.setContentsMargins(0, 0, 0, 0)
+        self.persons_table_layout.addStretch()
+
+        scroll_area.setWidget(scroll_widget)
+        table_layout.addWidget(scroll_area)
+
+        layout.addWidget(table_frame)
 
         return widget
 
-    def _validate_national_id(self):
-        """Validate national ID uniqueness (Medium priority gap)."""
-        nid = self.person_national_id.text().strip()
-
-        if not nid:
-            self.national_id_status.setText("")
-            return
-
-        if len(nid) != 11 or not nid.isdigit():
-            self.national_id_status.setText("⚠️ يجب أن يكون 11 رقم")
-            self.national_id_status.setStyleSheet(f"color: {Config.WARNING_COLOR};")
-            return
-
-        # Check in current context
-        for i, p in enumerate(self.context.persons):
-            if p.get('national_id') == nid:
-                if self._editing_person_index is not None and i == self._editing_person_index:
-                    continue
-                self.national_id_status.setText("❌ الرقم موجود مسبقاً")
-                self.national_id_status.setStyleSheet(f"color: {Config.ERROR_COLOR};")
-                return
-
-        # Check in database
-        existing = self.person_repo.get_by_national_id(nid)
-        if existing:
-            self.national_id_status.setText("⚠️ موجود في قاعدة البيانات")
-            self.national_id_status.setStyleSheet(f"color: {Config.WARNING_COLOR};")
-        else:
-            self.national_id_status.setText("✅ الرقم متاح")
-            self.national_id_status.setStyleSheet(f"color: {Config.SUCCESS_COLOR};")
-
-    def _populate_household_combo(self):
-        """Populate household combo for person linking."""
-        self.person_household_combo.clear()
-        self.person_household_combo.addItem("-- غير مرتبط --", None)
-        for hh in self.context.households:
-            self.person_household_combo.addItem(f"👨‍👩‍👧‍👦 {hh['head_name']}", hh['household_id'])
-
     def _add_person(self):
-        """Clear form for adding new person."""
-        self._editing_person_index = None
-        self.person_form_title.setText("إضافة شخص جديد")
-        self.person_first_name.clear()
-        self.person_father_name.clear()
-        self.person_last_name.clear()
-        self.person_national_id.clear()
-        self.person_phone.clear()
-        self.person_is_contact.setChecked(False)
-        self.person_birth_date.setDate(QDate(1980, 1, 1))
-        self.national_id_status.setText("")
-        self._populate_household_combo()
-        Toast.show_toast(self, "أدخل بيانات الشخص الجديد", Toast.INFO)
+        """Show dialog to add a new person."""
+        dialog = PersonDialog(
+            parent=self,
+            person_data=None,
+            households=self.context.households,
+            existing_persons=self.context.persons
+        )
 
-    def _on_person_selected(self, item):
-        """Load person data for editing (S12 - Edit Person)."""
-        person_id = item.data(Qt.UserRole)
+        if dialog.exec_() == QDialog.Accepted:
+            person_data = dialog.get_person_data()
+            person_data['person_id'] = str(uuid.uuid4())
+            self.context.persons.append(person_data)
+            self._refresh_persons_list()
+            Toast.show_toast(self, "تم إضافة الشخص بنجاح", Toast.SUCCESS)
+
+    def _create_person_row_card(self, person: dict, index: int = 0) -> QFrame:
+        """Create a person row card matching the photo layout."""
+        card = QFrame()
+        card.setStyleSheet("""
+            QFrame {
+                background-color: #F9FAFB;
+                border: 1px solid #E5E7EB;
+                border-radius: 6px;
+            }
+            QFrame:hover {
+                background-color: #F3F4F6;
+            }
+        """)
+
+        card_layout = QHBoxLayout(card)
+        card_layout.setContentsMargins(12, 10, 12, 10)
+        card_layout.setSpacing(12)
+
+        # Right side: Person info
+        info_container = QWidget()
+        info_layout = QVBoxLayout(info_container)
+        info_layout.setContentsMargins(0, 0, 0, 0)
+        info_layout.setSpacing(2)
+
+        # Person name with icon
+        full_name = f"{person['first_name']} {person.get('father_name', '')} {person['last_name']}".strip()
+        name_label = QLabel(f"👤 {full_name}")
+        name_label.setStyleSheet("""
+            font-size: 13px;
+            font-weight: 700;
+            color: #111827;
+        """)
+        info_layout.addWidget(name_label)
+
+        # Person role/status
+        role_text = "مالك" if person.get('is_contact_person') else "ساكن"
+        role_label = QLabel(role_text)
+        role_label.setStyleSheet("""
+            font-size: 11px;
+            color: #6B7280;
+        """)
+        info_layout.addWidget(role_label)
+
+        card_layout.addWidget(info_container, 1)
+
+        # Left side: Action buttons
+        actions_container = QWidget()
+        actions_layout = QHBoxLayout(actions_container)
+        actions_layout.setContentsMargins(0, 0, 0, 0)
+        actions_layout.setSpacing(8)
+
+        # Three dots menu button
+        menu_btn = QPushButton("⋯")
+        menu_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: none;
+                color: #6B7280;
+                font-size: 20px;
+                padding: 4px 8px;
+            }
+            QPushButton:hover {
+                color: #111827;
+            }
+        """)
+        menu_btn.setCursor(Qt.PointingHandCursor)
+
+        # Create context menu
+        menu = QMenu(menu_btn)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: white;
+                border: 1px solid #E5E7EB;
+                border-radius: 6px;
+                padding: 4px;
+            }
+            QMenu::item {
+                padding: 8px 16px;
+                border-radius: 4px;
+            }
+            QMenu::item:selected {
+                background-color: #F3F4F6;
+            }
+        """)
+
+        # View action
+        view_action = menu.addAction("👁 عرض")
+        view_action.triggered.connect(lambda: self._view_person(person['person_id']))
+
+        # Delete action
+        delete_action = menu.addAction("🗑 حذف")
+        delete_action.triggered.connect(lambda: self._delete_person_by_id(person['person_id']))
+
+        menu_btn.setMenu(menu)
+        menu_btn.clicked.connect(lambda: menu.exec_(menu_btn.mapToGlobal(menu_btn.rect().bottomLeft())))
+
+        actions_layout.addWidget(menu_btn)
+
+        card_layout.addWidget(actions_container)
+
+        return card
+
+    def _refresh_persons_list(self):
+        """Refresh persons display table."""
+        # Clear existing cards
+        while self.persons_table_layout.count() > 1:  # Keep the stretch
+            item = self.persons_table_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        # Add person cards
+        for idx, person in enumerate(self.context.persons):
+            person_card = self._create_person_row_card(person, idx)
+            self.persons_table_layout.insertWidget(idx, person_card)
+
+    def _view_person(self, person_id: str):
+        """Show dialog to view/edit person data."""
+        person_data = None
+        person_index = None
+
         for i, person in enumerate(self.context.persons):
             if person['person_id'] == person_id:
-                self._editing_person_index = i
-                self.person_form_title.setText("✏️ تعديل بيانات الشخص")
-
-                self.person_first_name.setText(person['first_name'])
-                self.person_father_name.setText(person.get('father_name', ''))
-                self.person_last_name.setText(person['last_name'])
-                self.person_national_id.setText(person.get('national_id') or '')
-                self.person_phone.setText(person.get('phone') or '')
-                self.person_is_contact.setChecked(person.get('is_contact_person', False))
-
-                # Set gender
-                idx = self.person_gender.findData(person.get('gender', 'male'))
-                if idx >= 0:
-                    self.person_gender.setCurrentIndex(idx)
-
-                # Set birth date
-                if person.get('birth_date'):
-                    self.person_birth_date.setDate(QDate.fromString(person['birth_date'], "yyyy-MM-dd"))
-                elif person.get('year_of_birth'):
-                    self.person_birth_date.setDate(QDate(person['year_of_birth'], 1, 1))
-
-                # Set household
-                self._populate_household_combo()
-                hh_id = person.get('household_id')
-                if hh_id:
-                    idx = self.person_household_combo.findData(hh_id)
-                    if idx >= 0:
-                        self.person_household_combo.setCurrentIndex(idx)
-
-                self._validate_national_id()
+                person_data = person
+                person_index = i
                 break
 
-    def _save_person(self):
-        """Save person data to context."""
-        if not self.person_first_name.text().strip():
-            QMessageBox.warning(self, "خطأ", "يجب إدخال الاسم الأول")
-            return
+        if person_data:
+            dialog = PersonDialog(
+                parent=self,
+                person_data=person_data,
+                households=self.context.households,
+                existing_persons=self.context.persons
+            )
 
-        if not self.person_last_name.text().strip():
-            QMessageBox.warning(self, "خطأ", "يجب إدخال اسم العائلة")
-            return
+            if dialog.exec_() == QDialog.Accepted:
+                updated_data = dialog.get_person_data()
+                updated_data['person_id'] = person_id  # Keep the same ID
+                self.context.persons[person_index] = updated_data
+                self._refresh_persons_list()
+                Toast.show_toast(self, "تم تحديث بيانات الشخص بنجاح", Toast.SUCCESS)
 
-        person = {
-            "person_id": str(uuid.uuid4()) if self._editing_person_index is None else self.context.persons[self._editing_person_index]['person_id'],
-            "first_name": self.person_first_name.text().strip(),
-            "father_name": self.person_father_name.text().strip(),
-            "last_name": self.person_last_name.text().strip(),
-            "national_id": self.person_national_id.text().strip() or None,
-            "gender": self.person_gender.currentData(),
-            "birth_date": self.person_birth_date.date().toString("yyyy-MM-dd"),
-            "year_of_birth": self.person_birth_date.date().year(),
-            "phone": self.person_phone.text().strip() or None,
-            "is_contact_person": self.person_is_contact.isChecked(),
-            "household_id": self.person_household_combo.currentData()
-        }
-
-        if self._editing_person_index is not None:
-            self.context.persons[self._editing_person_index] = person
-            Toast.show_toast(self, "تم تحديث بيانات الشخص", Toast.SUCCESS)
-        else:
-            self.context.persons.append(person)
-            Toast.show_toast(self, "تم إضافة الشخص", Toast.SUCCESS)
-
-        self._refresh_persons_list()
-        self._add_person()
-        self.next_btn.setEnabled(True)
-
-    def _delete_person(self):
-        """Delete selected person."""
-        current = self.persons_list.currentItem()
-        if not current:
-            return
-
-        person_id = current.data(Qt.UserRole)
-
+    def _delete_person_by_id(self, person_id: str):
+        """Delete person by ID with confirmation."""
         # Check if person has relations
         has_relations = any(r['person_id'] == person_id for r in self.context.relations)
+
         if has_relations:
             reply = QMessageBox.question(
-                self, "تحذير",
+                self,
+                "تحذير",
                 "هذا الشخص مرتبط بعلاقات. سيتم حذف العلاقات أيضاً.\nهل تريد المتابعة؟",
                 QMessageBox.Yes | QMessageBox.No
             )
@@ -2757,25 +3157,19 @@ class OfficeSurveyWizard(QWidget):
                 return
             # Remove relations
             self.context.relations = [r for r in self.context.relations if r['person_id'] != person_id]
+        else:
+            reply = QMessageBox.question(
+                self,
+                "تأكيد الحذف",
+                "هل أنت متأكد من حذف هذا الشخص؟",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.No:
+                return
 
         self.context.persons = [p for p in self.context.persons if p['person_id'] != person_id]
         self._refresh_persons_list()
-        self._add_person()
-        Toast.show_toast(self, "تم حذف الشخص", Toast.INFO)
-
-    def _refresh_persons_list(self):
-        """Refresh persons display list."""
-        self.persons_list.clear()
-        for person in self.context.persons:
-            full_name = f"{person['first_name']} {person.get('father_name', '')} {person['last_name']}".strip()
-            contact_badge = "📞 " if person.get('is_contact_person') else ""
-            nid = person.get('national_id') or 'غير متوفر'
-            item = QListWidgetItem(
-                f"{contact_badge}👤 {full_name}\n"
-                f"   الرقم الوطني: {nid}"
-            )
-            item.setData(Qt.UserRole, person['person_id'])
-            self.persons_list.addItem(item)
+        Toast.show_toast(self, "تم حذف الشخص بنجاح", Toast.SUCCESS)
 
     # ==================== Step 5: Relations (S14-S16) ====================
 
@@ -3755,7 +4149,10 @@ class OfficeSurveyWizard(QWidget):
         ]
 
         # Add labels (row 0) and values (row 1)
-        for col, (label_text, value_text) in enumerate(fields):
+        for idx, (label_text, value_text) in enumerate(fields):
+            # Reverse column order for RTL (rightmost = first item)
+            col = 5 - idx
+
             # Label
             label = QLabel(label_text)
             label.setAlignment(Qt.AlignCenter)
@@ -3823,7 +4220,10 @@ class OfficeSurveyWizard(QWidget):
         ]
 
         # Add labels (row 0) and values (row 1)
-        for col, (label_text, value_text) in enumerate(fields):
+        for idx, (label_text, value_text) in enumerate(fields):
+            # Reverse column order for RTL (rightmost = first item)
+            col = 5 - idx
+
             # Label
             label = QLabel(label_text)
             label.setAlignment(Qt.AlignCenter)
@@ -3890,9 +4290,7 @@ class OfficeSurveyWizard(QWidget):
             self.next_btn.setEnabled(len(self.context.households) > 0)
 
         elif step == self.STEP_PERSONS:
-            self._populate_household_combo()
             self._refresh_persons_list()
-            self._add_person()
             self.next_btn.setEnabled(len(self.context.persons) > 0)
 
         elif step == self.STEP_RELATIONS:
