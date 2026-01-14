@@ -2539,7 +2539,7 @@ class OfficeSurveyWizard(QWidget):
         # Right side (RTL): عدد الأفراد should appear on right (column 1)
         total_members_label = QLabel("عدد الأفراد")
         total_members_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px; border: none; background-color: transparent;")
-        total_members_label.setAlignment(Qt.AlignRight)
+        #total_members_label.setAlignment(Qt.AlignRight)
         family_info_grid.addWidget(total_members_label, 0, 1)
 
         self.hh_total_members = QSpinBox()
@@ -2559,7 +2559,7 @@ class OfficeSurveyWizard(QWidget):
         # Left side (RTL): رب الأسرة/العائل should appear on left (column 0)
         head_name_label = QLabel("رب الأسرة/العائل")
         head_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px; border: none; background-color: transparent;")
-        head_name_label.setAlignment(Qt.AlignRight)
+       # head_name_label.setAlignment(Qt.AlignRight)
         family_info_grid.addWidget(head_name_label, 0, 0)
 
         self.hh_head_name = QLineEdit()
@@ -2595,7 +2595,7 @@ class OfficeSurveyWizard(QWidget):
         composition_header = QLabel("👥 تكوين الأسرة")
         composition_header.setStyleSheet("""
             font-size: 13px;
-            font-weight: 700;
+            font-weight: 200;
             color: #1F2937;
             padding: 4px 0px;
         """)
@@ -2621,7 +2621,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 0-1: عدد البالغين الإناث (RIGHT side for RTL, column 1)
         adult_females_label = QLabel("عدد البالغين الإناث")
         adult_females_label.setStyleSheet(label_style)
-        adult_females_label.setAlignment(Qt.AlignRight)
+       # adult_females_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(adult_females_label, 0, 1)
 
         self.hh_adult_females = QSpinBox()
@@ -2633,7 +2633,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 0-1: عدد البالغين الذكور (LEFT side for RTL, column 0)
         adult_males_label = QLabel("عدد البالغين الذكور")
         adult_males_label.setStyleSheet(label_style)
-        adult_males_label.setAlignment(Qt.AlignRight)
+        #adult_males_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(adult_males_label, 0, 0)
 
         self.hh_adult_males = QSpinBox()
@@ -2645,7 +2645,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 2-3: عدد الأطفال الإناث (أقل من 18) (RIGHT side for RTL, column 1)
         female_children_label = QLabel("عدد الأطفال الإناث (أقل من 18)")
         female_children_label.setStyleSheet(label_style)
-        female_children_label.setAlignment(Qt.AlignRight)
+        #female_children_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(female_children_label, 2, 1)
 
         self.hh_female_children_under18 = QSpinBox()
@@ -2657,7 +2657,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 2-3: عدد الأطفال الذكور (أقل من 18) (LEFT side for RTL, column 0)
         male_children_label = QLabel("عدد الأطفال الذكور (أقل من 18)")
         male_children_label.setStyleSheet(label_style)
-        male_children_label.setAlignment(Qt.AlignRight)
+       # male_children_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(male_children_label, 2, 0)
 
         self.hh_male_children_under18 = QSpinBox()
@@ -2669,7 +2669,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 4-5: عدد كبار السن الإناث (أكبر من 65) (RIGHT side for RTL, column 1)
         female_elderly_label = QLabel("عدد كبار السن الإناث (أكبر من 65)")
         female_elderly_label.setStyleSheet(label_style)
-        female_elderly_label.setAlignment(Qt.AlignRight)
+        #female_elderly_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(female_elderly_label, 4, 1)
 
         self.hh_female_elderly_over65 = QSpinBox()
@@ -2681,7 +2681,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 4-5: عدد كبار السن الذكور (أكبر من 65) (LEFT side for RTL, column 0)
         male_elderly_label = QLabel("عدد كبار السن الذكور (أكبر من 65)")
         male_elderly_label.setStyleSheet(label_style)
-        male_elderly_label.setAlignment(Qt.AlignRight)
+        #male_elderly_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(male_elderly_label, 4, 0)
 
         self.hh_male_elderly_over65 = QSpinBox()
@@ -2693,7 +2693,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 6-7: عدد المعاقين الإناث (RIGHT side for RTL, column 1)
         disabled_females_label = QLabel("عدد المعاقين الإناث")
         disabled_females_label.setStyleSheet(label_style)
-        disabled_females_label.setAlignment(Qt.AlignRight)
+        #disabled_females_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(disabled_females_label, 6, 1)
 
         self.hh_disabled_females = QSpinBox()
@@ -2705,7 +2705,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 6-7: عدد المعاقين الذكور (LEFT side for RTL, column 0)
         disabled_males_label = QLabel("عدد المعاقين الذكور")
         disabled_males_label.setStyleSheet(label_style)
-        disabled_males_label.setAlignment(Qt.AlignRight)
+        #disabled_males_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(disabled_males_label, 6, 0)
 
         self.hh_disabled_males = QSpinBox()
