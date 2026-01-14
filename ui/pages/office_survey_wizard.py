@@ -303,10 +303,10 @@ class PersonDialog(QDialog):
 
         self.setWindowTitle("تعديل بيانات الشخص" if self.editing_mode else "إضافة شخص جديد")
         self.setModal(True)
-        self.setMinimumWidth(500)
+        self.setMinimumWidth(520)
         self.setStyleSheet("""
             QDialog {
-                background-color: white;
+                background-color: #f5f7fa;
             }
         """)
 
@@ -316,112 +316,87 @@ class PersonDialog(QDialog):
             self._load_person_data(person_data)
 
     def _setup_ui(self):
-        """Setup dialog UI."""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(20)
+        """Setup dialog UI using GridLayout."""
+        self.setLayoutDirection(Qt.RightToLeft)  # Set RTL for Arabic
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(15)
+        main_layout.setContentsMargins(30, 30, 30, 30)
 
         # Title
         title = QLabel("تعديل بيانات الشخص" if self.editing_mode else "إضافة شخص جديد")
-        title.setStyleSheet("font-size: 18px; font-weight: 700; color: #111827;")
+        title.setStyleSheet("font-size: 20px; font-weight: bold; color: #2c3e50;")
         title.setAlignment(Qt.AlignRight)
-        layout.addWidget(title)
+        main_layout.addWidget(title)
 
-        # Form container
-        form_widget = QWidget()
-        form_container = QVBoxLayout(form_widget)
-        form_container.setSpacing(16)
-        form_container.setContentsMargins(0, 0, 0, 0)
+        # Form Grid
+        grid = QGridLayout()
+        grid.setSpacing(15)
 
-        # Row 1: First name and Last name (2 columns)
-        row1 = QHBoxLayout()
-        row1.setSpacing(12)
+        # Label style - consistent right alignment
+        label_style = "color: #555; font-weight: 600; font-size: 13px; text-align: right;"
 
-        # First name (right side)
-        first_name_container = QVBoxLayout()
-        first_name_container.setSpacing(6)
+        # Row 0: First Name | Last Name
         first_name_label = QLabel("الاسم الأول")
-        first_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        first_name_label.setStyleSheet(label_style)
         first_name_label.setAlignment(Qt.AlignRight)
-        self.first_name = QLineEdit()
-        self.first_name.setPlaceholderText("ادخل الاسم الأول")
-        self.first_name.setStyleSheet(self._input_style())
-        first_name_container.addWidget(first_name_label)
-        first_name_container.addWidget(self.first_name)
+        grid.addWidget(first_name_label, 0, 0)
 
-        # Last name (left side)
-        last_name_container = QVBoxLayout()
-        last_name_container.setSpacing(6)
         last_name_label = QLabel("الكنية")
-        last_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        last_name_label.setStyleSheet(label_style)
         last_name_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(last_name_label, 0, 1)
+
+        self.first_name = QLineEdit()
+        self.first_name.setPlaceholderText("ادخل الاسم الاول")
+        self.first_name.setStyleSheet(self._input_style())
+        grid.addWidget(self.first_name, 1, 0)
+
         self.last_name = QLineEdit()
         self.last_name.setPlaceholderText("ادخل اسم العائلة")
         self.last_name.setStyleSheet(self._input_style())
-        last_name_container.addWidget(last_name_label)
-        last_name_container.addWidget(self.last_name)
+        grid.addWidget(self.last_name, 1, 1)
 
-        row1.addLayout(last_name_container)
-        row1.addLayout(first_name_container)
-        form_container.addLayout(row1)
-
-        # Row 2: Father name and Mother name (2 columns)
-        row2 = QHBoxLayout()
-        row2.setSpacing(12)
-
-        # Mother name (right side)
-        mother_name_container = QVBoxLayout()
-        mother_name_container.setSpacing(6)
+        # Row 2: Mother Name | Father Name
         mother_name_label = QLabel("اسم الأم")
-        mother_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        mother_name_label.setStyleSheet(label_style)
         mother_name_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(mother_name_label, 2, 0)
+
+        father_name_label = QLabel("اسم الأب")
+        father_name_label.setStyleSheet(label_style)
+        father_name_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(father_name_label, 2, 1)
+
         self.mother_name = QLineEdit()
         self.mother_name.setPlaceholderText("ادخل اسم الأم")
         self.mother_name.setStyleSheet(self._input_style())
-        mother_name_container.addWidget(mother_name_label)
-        mother_name_container.addWidget(self.mother_name)
+        grid.addWidget(self.mother_name, 3, 0)
 
-        # Father name (left side)
-        father_name_container = QVBoxLayout()
-        father_name_container.setSpacing(6)
-        father_name_label = QLabel("اسم الأب")
-        father_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        father_name_label.setAlignment(Qt.AlignRight)
         self.father_name = QLineEdit()
-        self.father_name.setPlaceholderText("ادخل اسم الأب")
+        self.father_name.setPlaceholderText("ادخل اسم الاب")
         self.father_name.setStyleSheet(self._input_style())
-        father_name_container.addWidget(father_name_label)
-        father_name_container.addWidget(self.father_name)
+        grid.addWidget(self.father_name, 3, 1)
 
-        row2.addLayout(mother_name_container)
-        row2.addLayout(father_name_container)
-        form_container.addLayout(row2)
-
-        # Row 3: Birth date and National ID (2 columns)
-        row3 = QHBoxLayout()
-        row3.setSpacing(12)
-
-        # Birth date (right side)
-        birth_date_container = QVBoxLayout()
-        birth_date_container.setSpacing(6)
+        # Row 4: Birth Date | ID Number
         birth_date_label = QLabel("تاريخ الميلاد")
-        birth_date_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        birth_date_label.setStyleSheet(label_style)
         birth_date_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(birth_date_label, 4, 0)
+
+        national_id_label = QLabel("الرقم الوطني")
+        national_id_label.setStyleSheet(label_style)
+        national_id_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(national_id_label, 4, 1)
+
         self.birth_date = QDateEdit()
         self.birth_date.setCalendarPopup(True)
         self.birth_date.setDate(QDate(1980, 1, 1))
         self.birth_date.setDisplayFormat("yyyy-MM-dd")
         self.birth_date.setStyleSheet(self._input_style())
-        birth_date_container.addWidget(birth_date_label)
-        birth_date_container.addWidget(self.birth_date)
+        grid.addWidget(self.birth_date, 5, 0)
 
-        # National ID (left side)
-        national_id_container = QVBoxLayout()
-        national_id_container.setSpacing(6)
-        national_id_label = QLabel("الرقم الوطني")
-        national_id_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        national_id_label.setAlignment(Qt.AlignRight)
-
+        # National ID with calendar button
         national_id_widget = QWidget()
         national_id_layout = QHBoxLayout(national_id_widget)
         national_id_layout.setContentsMargins(0, 0, 0, 0)
@@ -433,80 +408,75 @@ class PersonDialog(QDialog):
         self.national_id.setStyleSheet(self._input_style())
         self.national_id.textChanged.connect(self._validate_national_id)
 
-        # Calendar icon button
-        calendar_btn = QPushButton()
-        calendar_btn.setIcon(QIcon())
-        calendar_btn.setText("📅")
+        calendar_btn = QPushButton("📅")
         calendar_btn.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #e0e6ed;
                 border-radius: 6px;
-                padding: 8px 12px;
+                padding: 10px;
                 font-size: 16px;
             }
         """)
 
         national_id_layout.addWidget(self.national_id)
         national_id_layout.addWidget(calendar_btn)
+        grid.addWidget(national_id_widget, 5, 1)
 
-        national_id_container.addWidget(national_id_label)
-        national_id_container.addWidget(national_id_widget)
-
-        row3.addLayout(national_id_container)
-        row3.addLayout(birth_date_container)
-        form_container.addLayout(row3)
-
-        # National ID status
+        # National ID status (spans both columns)
         self.national_id_status = QLabel("")
         self.national_id_status.setAlignment(Qt.AlignRight)
-        form_container.addWidget(self.national_id_status)
+        grid.addWidget(self.national_id_status, 6, 0, 1, 2)
 
-        # Row 4: Email and Gender (2 columns)
-        row4 = QHBoxLayout()
-        row4.setSpacing(12)
-
-        # Email (right side)
-        email_container = QVBoxLayout()
-        email_container.setSpacing(6)
+        # Row 7: Email | Relationship
         email_label = QLabel("البريد الالكتروني")
-        email_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        email_label.setStyleSheet(label_style)
         email_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(email_label, 7, 0)
+
+        relationship_label = QLabel("علاقة الشخص بوحدة العقار")
+        relationship_label.setStyleSheet(label_style)
+        relationship_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(relationship_label, 7, 1)
+
         self.email = QLineEdit()
         self.email.setPlaceholderText("*****@gmail.com")
         self.email.setStyleSheet(self._input_style())
-        email_container.addWidget(email_label)
-        email_container.addWidget(self.email)
+        grid.addWidget(self.email, 8, 0)
 
-        # Gender/Household (left side) - using household dropdown as shown in photo
-        household_container = QVBoxLayout()
-        household_container.setSpacing(6)
-        household_label = QLabel("علاقة الشخص بوحدة العقار")
-        household_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        household_label.setAlignment(Qt.AlignRight)
-        self.household_combo = QComboBox()
-        self.household_combo.addItem("اختر", None)
-        for hh in self.households:
-            self.household_combo.addItem(f"👨‍👩‍👧‍👦 {hh['head_name']}", hh['household_id'])
-        self.household_combo.setStyleSheet(self._input_style())
-        household_container.addWidget(household_label)
-        household_container.addWidget(self.household_combo)
+        self.relationship_combo = QComboBox()
+        self.relationship_combo.addItem("اختر", None)
+        relationship_types = [
+            ("owner", "مالك"),
+            ("tenant", "مستأجر"),
+            ("occupant", "ساكن"),
+            ("co_owner", "شريك في الملكية"),
+            ("heir", "وارث"),
+            ("guardian", "ولي/وصي"),
+            ("other", "أخرى")
+        ]
+        for code, ar_name in relationship_types:
+            self.relationship_combo.addItem(ar_name, code)
+        self.relationship_combo.setStyleSheet(self._input_style())
+        grid.addWidget(self.relationship_combo, 8, 1)
 
-        row4.addLayout(household_container)
-        row4.addLayout(email_container)
-        form_container.addLayout(row4)
+        # Row 9: Phone | Mobile
+        landline_label = QLabel("رقم الهاتف")
+        landline_label.setStyleSheet(label_style)
+        landline_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(landline_label, 9, 0)
 
-        # Row 5: Mobile and Landline (2 columns)
-        row5 = QHBoxLayout()
-        row5.setSpacing(12)
-
-        # Mobile (right side)
-        mobile_container = QVBoxLayout()
-        mobile_container.setSpacing(6)
         mobile_label = QLabel("رقم الموبايل")
-        mobile_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
+        mobile_label.setStyleSheet(label_style)
         mobile_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(mobile_label, 9, 1)
 
+        self.landline = QLineEdit()
+        self.landline.setPlaceholderText("0000000")
+        self.landline.setStyleSheet(self._input_style())
+        grid.addWidget(self.landline, 10, 0)
+
+        # Mobile with country code
         mobile_widget = QWidget()
         mobile_layout = QHBoxLayout(mobile_widget)
         mobile_layout.setContentsMargins(0, 0, 0, 0)
@@ -524,25 +494,9 @@ class PersonDialog(QDialog):
 
         mobile_layout.addWidget(self.phone)
         mobile_layout.addWidget(country_code)
+        grid.addWidget(mobile_widget, 10, 1)
 
-        mobile_container.addWidget(mobile_label)
-        mobile_container.addWidget(mobile_widget)
-
-        # Landline (left side)
-        landline_container = QVBoxLayout()
-        landline_container.setSpacing(6)
-        landline_label = QLabel("رقم الهاتف")
-        landline_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        landline_label.setAlignment(Qt.AlignRight)
-        self.landline = QLineEdit()
-        self.landline.setPlaceholderText("0000000")
-        self.landline.setStyleSheet(self._input_style())
-        landline_container.addWidget(landline_label)
-        landline_container.addWidget(self.landline)
-
-        row5.addLayout(landline_container)
-        row5.addLayout(mobile_container)
-        form_container.addLayout(row5)
+        main_layout.addLayout(grid)
 
         # Gender (hidden but kept for compatibility)
         self.gender = QComboBox()
@@ -550,85 +504,92 @@ class PersonDialog(QDialog):
         self.gender.addItem("أنثى", "female")
         self.gender.hide()
 
-        # Additional info section with icon
-        additional_info = QHBoxLayout()
-        additional_info.setSpacing(8)
-
-        info_icon = QLabel("📄")
-        info_icon.setStyleSheet("font-size: 18px;")
-
-        info_link = QLabel('<a href="#" style="color: #0072BC; text-decoration: none;">ارفع صور المستندات</a>')
-        info_link.setStyleSheet("font-size: 13px;")
-        info_link.setAlignment(Qt.AlignRight)
-
-        additional_info.addStretch()
-        additional_info.addWidget(info_link)
-        additional_info.addWidget(info_icon)
-
-        form_container.addLayout(additional_info)
-
-        # Is contact person
+        # Is contact person (hidden)
         self.is_contact = QCheckBox("شخص التواصل الرئيسي")
-        self.is_contact.hide()  # Hide for now as not shown in photo
+        self.is_contact.hide()
 
-        layout.addWidget(form_widget)
+        # Upload Area
+        upload_frame = QFrame()
+        upload_frame.setObjectName("uploadArea")
+        upload_frame.setStyleSheet("""
+            QFrame#uploadArea {
+                border: 2px dashed #d1d9e6;
+                border-radius: 10px;
+                background-color: #f0f4f8;
+            }
+        """)
+        upload_frame.setFixedHeight(100)
+        upload_layout = QVBoxLayout(upload_frame)
+        upload_label = QLabel("📄  ارفع صور المستندات")
+        upload_label.setAlignment(Qt.AlignCenter)
+        upload_label.setStyleSheet("color: #4a90e2; background: transparent; font-size: 14px; font-weight: bold;")
+        upload_layout.addWidget(upload_label)
+        main_layout.addWidget(upload_frame)
 
         # Buttons
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(12)
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(12)
 
-        cancel_btn = QPushButton("إلغاء")
-        cancel_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #374151;
-                border: 1px solid #D1D5DB;
+        save_btn = QPushButton("حفظ")
+        save_btn.setObjectName("saveBtn")
+        save_btn.setStyleSheet("""
+            QPushButton#saveBtn {
+                background-color: #4a90e2;
+                color: white;
                 border-radius: 8px;
-                padding: 12px 32px;
-                font-size: 14px;
-                font-weight: 600;
+                padding: 12px;
+                font-weight: bold;
+                font-size: 16px;
             }
-            QPushButton:hover {
-                background-color: #F9FAFB;
+            QPushButton#saveBtn:hover {
+                background-color: #357ABD;
+            }
+        """)
+        save_btn.clicked.connect(self._save_person)
+
+        cancel_btn = QPushButton("الغاء")
+        cancel_btn.setObjectName("cancelBtn")
+        cancel_btn.setStyleSheet("""
+            QPushButton#cancelBtn {
+                background-color: white;
+                color: #333;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                padding: 12px;
+                font-size: 16px;
+            }
+            QPushButton#cancelBtn:hover {
+                background-color: #f5f5f5;
             }
         """)
         cancel_btn.clicked.connect(self.reject)
 
-        save_btn = QPushButton("التالي")
-        save_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {Config.PRIMARY_COLOR};
-                color: white;
-                border: none;
-                border-radius: 8px;
-                padding: 12px 32px;
-                font-size: 14px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{
-                background-color: #0056A3;
-            }}
-        """)
-        save_btn.clicked.connect(self._save_person)
-
-        buttons_layout.addWidget(cancel_btn, 1)
-        buttons_layout.addWidget(save_btn, 1)
-
-        layout.addLayout(buttons_layout)
+        btn_layout.addWidget(save_btn)
+        btn_layout.addWidget(cancel_btn)
+        main_layout.addLayout(btn_layout)
 
     def _input_style(self):
         """Return standard input style."""
         return """
-            QLineEdit, QComboBox, QDateEdit, QSpinBox {
-                padding: 8px 12px;
-                border: 1px solid #E5E7EB;
-                border-radius: 6px;
-                background-color: #F9FAFB;
-                font-size: 12px;
+            QLineEdit, QComboBox, QDateEdit {
+                border: 1px solid #e0e6ed;
+                border-radius: 8px;
+                padding: 10px;
+                background-color: white;
+                color: #333;
+                font-size: 14px;
             }
             QLineEdit:focus, QComboBox:focus, QDateEdit:focus {
-                border: 1px solid #0072BC;
+                border: 1px solid #4a90e2;
                 background-color: white;
+            }
+            QComboBox::drop-down {
+                border: none;
+                padding-right: 10px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border: none;
             }
         """
 
@@ -681,11 +642,12 @@ class PersonDialog(QDialog):
             if bd.isValid():
                 self.birth_date.setDate(bd)
 
-        # Household
-        hh_id = person_data.get('household_id')
-        idx = self.household_combo.findData(hh_id)
-        if idx >= 0:
-            self.household_combo.setCurrentIndex(idx)
+        # Relationship type
+        rel_type = person_data.get('relationship_type')
+        if rel_type:
+            idx = self.relationship_combo.findData(rel_type)
+            if idx >= 0:
+                self.relationship_combo.setCurrentIndex(idx)
 
         self.is_contact.setChecked(person_data.get('is_contact_person', False))
 
@@ -719,7 +681,7 @@ class PersonDialog(QDialog):
             'phone': self.phone.text().strip() or None,
             'email': self.email.text().strip() or None,
             'landline': self.landline.text().strip() or None,
-            'household_id': self.household_combo.currentData(),
+            'relationship_type': self.relationship_combo.currentData(),
             'is_contact_person': self.is_contact.isChecked()
         }
 
@@ -3037,8 +2999,17 @@ class OfficeSurveyWizard(QWidget):
         name_label.setAlignment(Qt.AlignRight)
         info_layout.addWidget(name_label)
 
-        # Person role/status
-        role_text = "مالك" if person.get('is_contact_person') else "ساكن"
+        # Person role/status - use relationship_type if available
+        rel_type_map = {
+            "owner": "مالك",
+            "tenant": "مستأجر",
+            "occupant": "ساكن",
+            "co_owner": "شريك في الملكية",
+            "heir": "وارث",
+            "guardian": "ولي/وصي",
+            "other": "أخرى"
+        }
+        role_text = rel_type_map.get(person.get('relationship_type'), "ساكن")
         role_label = QLabel(role_text)
         role_label.setStyleSheet("""
             font-size: 12px;
