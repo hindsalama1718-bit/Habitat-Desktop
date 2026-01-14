@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import (
     QDialog, QFileDialog, QDateEdit, QCheckBox,
     QGraphicsDropShadowEffect, QRadioButton, QButtonGroup,
     QTabWidget, QGridLayout, QSizePolicy, QToolButton, QLayout,
-    QMenu
+    QMenu, QDoubleSpinBox
 )
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, pyqtSignal, QDate
@@ -3180,67 +3180,126 @@ class OfficeSurveyWizard(QWidget):
     def _create_relations_step(self) -> QWidget:
         """Create Step 5: Relations with linked Evidence (S14-S16)."""
         widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
+        widget.setLayoutDirection(Qt.RightToLeft)
+        outer = QVBoxLayout(widget)
+        outer.setContentsMargins(18, 18, 18, 18)
+        outer.setSpacing(12)
 
-        # Info
-        info_label = QLabel(
-            "حدد نوع علاقة كل شخص بالوحدة العقارية وأضف الأدلة الداعمة لكل علاقة"
-        )
-        info_label.setStyleSheet(f"color: {Config.TEXT_LIGHT}; padding: 8px;")
-        layout.addWidget(info_label)
+        # Header (title + subtitle) placed outside the card
+        title_box = QVBoxLayout()
+        title = QLabel("العلاقة والأدلة")
+        title.setStyleSheet("color: #111827; font-weight: 700; font-size: 16px;")
+        subtitle = QLabel("تسجيل تفاصيل ملكية شخص للوحدة عقارية")
+        subtitle.setStyleSheet("color: #6B7280; font-size: 12px;")
+        title_box.addWidget(title)
+        title_box.addWidget(subtitle)
 
-        # Splitter
-        splitter = QSplitter(Qt.Horizontal)
+        header_layout = QHBoxLayout()
+        header_layout.addLayout(title_box)
+        header_layout.addStretch(1)
+        outer.addLayout(header_layout)
 
-        # Left: Relations list
-        list_frame = QFrame()
-        list_layout = QVBoxLayout(list_frame)
-
-        rel_header = QHBoxLayout()
-        rel_label = QLabel("العلاقات المسجلة:")
-        rel_label.setStyleSheet("font-weight: bold;")
-        rel_header.addWidget(rel_label)
-        rel_header.addStretch()
-
-        add_rel_btn = QPushButton("+ إضافة علاقة")
-        add_rel_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {Config.SUCCESS_COLOR};
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 6px 12px;
-            }}
+        # Card Container (holds all fields & actions)
+        card = QFrame()
+        card.setStyleSheet("""
+            QFrame {
+                background-color: white;
+                border: 1px solid #E5E7EB;
+                border-radius: 12px;
+            }
         """)
-        add_rel_btn.clicked.connect(self._add_relation)
-        rel_header.addWidget(add_rel_btn)
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(18, 16, 18, 16)
+        card_layout.setSpacing(14)
+        outer.addWidget(card)
 
-        list_layout.addLayout(rel_header)
+        # Small icon button inside the card aligned to the right
+        top_btn = QPushButton("⚙")
+        top_btn.setFixedSize(34, 34)
+        top_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #F9FAFB;
+                border: 1px solid #E5E7EB;
+                border-radius: 10px;
+                font-size: 14px;
+            }
+            QPushButton:hover { background-color: #F3F4F6; }
+        """)
+        top_btn_row = QHBoxLayout()
+        top_btn_row.addStretch(1)
+        top_btn_row.addWidget(top_btn)
+        card_layout.addLayout(top_btn_row)
 
-        self.relations_list = QListWidget()
-        self.relations_list.setStyleSheet("QListWidget::item { padding: 10px; }")
-        self.relations_list.itemClicked.connect(self._on_relation_selected)
-        list_layout.addWidget(self.relations_list)
+        # Person row with dropdown
+        person_row = QHBoxLayout()
+        person_row.setSpacing(10)
 
-        del_rel_btn = QPushButton("🗑️ حذف العلاقة المحددة")
-        del_rel_btn.clicked.connect(self._delete_relation)
-        list_layout.addWidget(del_rel_btn)
-
-        splitter.addWidget(list_frame)
-
-        # Right: Relation form
-        form_frame = QFrame()
-        form_frame.setStyleSheet("background-color: #F8FAFC; border-radius: 8px; padding: 12px;")
-        form_layout = QVBoxLayout(form_frame)
-
-        # Relation details
-        rel_form_group = QGroupBox("تفاصيل العلاقة")
-        rel_form = QFormLayout(rel_form_group)
-
+        # Person selector combo
         self.rel_person_combo = QComboBox()
-        rel_form.addRow("الشخص:", self.rel_person_combo)
+        self.rel_person_combo.setStyleSheet("""
+            QComboBox {
+                background: white;
+                border: 1px solid #E5E7EB;
+                border-radius: 8px;
+                padding: 8px 10px;
+                font-weight: 700;
+                color: #111827;
+                min-width: 200px;
+            }
+        """)
+
+        avatar = QLabel("👤")
+        avatar.setAlignment(Qt.AlignCenter)
+        avatar.setFixedSize(38, 38)
+        avatar.setStyleSheet("""
+            QLabel {
+                background-color: #EEF2FF;
+                border: 1px solid #E5E7EB;
+                border-radius: 12px;
+                font-size: 16px;
+            }
+        """)
+
+        person_row.addWidget(avatar)
+        person_row.addWidget(self.rel_person_combo)
+        person_row.addStretch(1)
+        card_layout.addLayout(person_row)
+
+        # Grid fields
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(14)
+        grid.setVerticalSpacing(10)
+
+        label_style = "color: #374151; font-weight: 600; font-size: 12px;"
+        input_style = """
+            QComboBox, QDateEdit, QDoubleSpinBox, QLineEdit {
+                background: white;
+                border: 1px solid #E5E7EB;
+                border-radius: 8px;
+                padding: 8px 10px;
+            }
+            QComboBox:focus, QDateEdit:focus, QDoubleSpinBox:focus, QLineEdit:focus {
+                border: 1px solid #3B82F6;
+            }
+        """
+
+        # Row 0 labels
+        contract_type_lbl = QLabel("نوع العقد")
+        contract_type_lbl.setStyleSheet(label_style)
+        grid.addWidget(contract_type_lbl, 0, 0)
+
+        relation_type_lbl = QLabel("نوع العلاقة")
+        relation_type_lbl.setStyleSheet(label_style)
+        grid.addWidget(relation_type_lbl, 0, 1)
+
+        start_date_lbl = QLabel("تاريخ بدء العلاقة")
+        start_date_lbl.setStyleSheet(label_style)
+        grid.addWidget(start_date_lbl, 0, 2)
+
+        # Row 1 inputs
+        self.rel_contract_type = QComboBox()
+        self.rel_contract_type.addItems(["اختر", "عقد إيجار", "عقد بيع", "عقد شراكة"])
+        self.rel_contract_type.setStyleSheet(input_style)
 
         self.rel_type_combo = QComboBox()
         rel_types = [
@@ -3250,79 +3309,191 @@ class OfficeSurveyWizard(QWidget):
         ]
         for code, ar in rel_types:
             self.rel_type_combo.addItem(ar, code)
-        rel_form.addRow("نوع العلاقة:", self.rel_type_combo)
-
-        self.rel_share = QSpinBox()
-        self.rel_share.setRange(0, 2400)
-        self.rel_share.setValue(2400)
-        self.rel_share.setSuffix(" / 2400")
-        rel_form.addRow("حصة الملكية:", self.rel_share)
+        self.rel_type_combo.setStyleSheet(input_style)
 
         self.rel_start_date = QDateEdit()
         self.rel_start_date.setCalendarPopup(True)
+        self.rel_start_date.setDisplayFormat("yyyy-MM-dd")
         self.rel_start_date.setDate(QDate.currentDate())
-        rel_form.addRow("تاريخ البداية:", self.rel_start_date)
+        self.rel_start_date.setStyleSheet(input_style)
 
-        # Contract details (Low priority gap)
-        self.rel_contract_number = QLineEdit()
-        self.rel_contract_number.setPlaceholderText("رقم العقد (اختياري)")
-        rel_form.addRow("رقم العقد:", self.rel_contract_number)
+        grid.addWidget(self.rel_contract_type, 1, 0)
+        grid.addWidget(self.rel_type_combo, 1, 1)
+        grid.addWidget(self.rel_start_date, 1, 2)
 
-        self.rel_contract_date = QDateEdit()
-        self.rel_contract_date.setCalendarPopup(True)
-        self.rel_contract_date.setDate(QDate.currentDate())
-        rel_form.addRow("تاريخ العقد:", self.rel_contract_date)
+        # Row 2 labels
+        ownership_share_lbl = QLabel("حصة الملكية")
+        ownership_share_lbl.setStyleSheet(label_style)
+        grid.addWidget(ownership_share_lbl, 2, 0)
 
+        evidence_type_lbl = QLabel("نوع الدليل")
+        evidence_type_lbl.setStyleSheet(label_style)
+        grid.addWidget(evidence_type_lbl, 2, 1)
+
+        evidence_desc_lbl = QLabel("وصف الدليل")
+        evidence_desc_lbl.setStyleSheet(label_style)
+        grid.addWidget(evidence_desc_lbl, 2, 2)
+
+        # Row 3 inputs
+        self.rel_share = QDoubleSpinBox()
+        self.rel_share.setRange(0, 100)
+        self.rel_share.setDecimals(2)
+        self.rel_share.setSuffix(" %")
+        self.rel_share.setValue(0)
+        self.rel_share.setStyleSheet(input_style)
+
+        self.rel_evidence_type = QComboBox()
+        self.rel_evidence_type.addItems(["اختر", "صك", "عقد", "وكالة", "إقرار"])
+        self.rel_evidence_type.setStyleSheet(input_style)
+
+        self.rel_evidence_desc = QLineEdit()
+        self.rel_evidence_desc.setPlaceholderText("-")
+        self.rel_evidence_desc.setStyleSheet(input_style)
+
+        grid.addWidget(self.rel_share, 3, 0)
+        grid.addWidget(self.rel_evidence_type, 3, 1)
+        grid.addWidget(self.rel_evidence_desc, 3, 2)
+
+        # Notes label + full-width notes
+        notes_lbl = QLabel("ادخل ملاحظاتك")
+        notes_lbl.setStyleSheet(label_style)
         self.rel_notes = QTextEdit()
-        self.rel_notes.setMaximumHeight(60)
-        rel_form.addRow("ملاحظات:", self.rel_notes)
+        self.rel_notes.setPlaceholderText("-")
+        self.rel_notes.setMinimumHeight(70)
+        self.rel_notes.setStyleSheet("""
+            QTextEdit {
+                background: white;
+                border: 1px solid #E5E7EB;
+                border-radius: 8px;
+                padding: 8px 10px;
+            }
+            QTextEdit:focus {
+                border: 1px solid #3B82F6;
+            }
+        """)
 
-        form_layout.addWidget(rel_form_group)
+        grid.addWidget(notes_lbl, 4, 0, 1, 3)
+        grid.addWidget(self.rel_notes, 5, 0, 1, 3)
 
-        # Evidence section - LINKED to relation (High priority gap fix)
-        evidence_group = QGroupBox("الأدلة والوثائق المرتبطة بهذه العلاقة")
-        ev_layout = QVBoxLayout(evidence_group)
+        card_layout.addLayout(grid)
 
-        self.relation_evidence_list = QListWidget()
-        self.relation_evidence_list.setMaximumHeight(120)
-        ev_layout.addWidget(self.relation_evidence_list)
+        # Documents section
+        docs_title = QLabel("صور المستندات")
+        docs_title.setStyleSheet(label_style)
+        card_layout.addWidget(docs_title)
 
-        ev_btn_layout = QHBoxLayout()
-        add_evidence_btn = QPushButton("📎 إضافة وثيقة")
-        add_evidence_btn.clicked.connect(self._add_evidence_to_relation)
-        ev_btn_layout.addWidget(add_evidence_btn)
+        docs_row = QHBoxLayout()
+        docs_row.setSpacing(18)
 
-        remove_evidence_btn = QPushButton("🗑️ إزالة")
-        remove_evidence_btn.clicked.connect(self._remove_evidence_from_relation)
-        ev_btn_layout.addWidget(remove_evidence_btn)
+        self.rel_rb_has = QRadioButton("يوجد مستندات")
+        self.rel_rb_none = QRadioButton("لا يوجد مستندات")
+        self.rel_rb_has.setChecked(True)
 
-        ev_btn_layout.addStretch()
-        ev_layout.addLayout(ev_btn_layout)
+        grp = QButtonGroup(self)
+        grp.addButton(self.rel_rb_has)
+        grp.addButton(self.rel_rb_none)
 
-        form_layout.addWidget(evidence_group)
+        docs_row.addWidget(self.rel_rb_has)
+        docs_row.addWidget(self.rel_rb_none)
+        docs_row.addStretch(1)
 
-        # Save relation button
-        save_rel_btn = QPushButton("💾 حفظ العلاقة")
-        save_rel_btn.setStyleSheet(f"""
+        card_layout.addLayout(docs_row)
+
+        # Upload box
+        upload_box = QFrame()
+        upload_box.setStyleSheet("""
+            QFrame {
+                border: 2px dashed #D1D5DB;
+                border-radius: 12px;
+                background-color: #FBFDFF;
+                min-height: 70px;
+            }
+        """)
+        up = QHBoxLayout(upload_box)
+        up.setContentsMargins(12, 10, 12, 10)
+        up.setSpacing(12)
+
+        self.rel_thumb = QLabel("📄")
+        self.rel_thumb.setAlignment(Qt.AlignCenter)
+        self.rel_thumb.setStyleSheet("""
+            QLabel {
+                background-color: #EEF2FF;
+                border: 1px solid #E5E7EB;
+                border-radius: 10px;
+                min-width: 54px;
+                min-height: 54px;
+                font-size: 24px;
+            }
+        """)
+        up.addWidget(self.rel_thumb)
+
+        # Center content (link-like button)
+        center_col = QVBoxLayout()
+        center_col.setSpacing(4)
+
+        self.rel_upload_btn = QPushButton("ارفع صور المستندات")
+        self.rel_upload_btn.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                border: none;
+                color: #2563EB;
+                font-weight: 700;
+                text-decoration: underline;
+                text-align: right;
+            }
+        """)
+        self.rel_upload_btn.clicked.connect(self._pick_evidence_files)
+
+        hint = QLabel("PNG / JPG / PDF")
+        hint.setStyleSheet("color: #6B7280; font-size: 11px;")
+
+        center_col.addWidget(self.rel_upload_btn, alignment=Qt.AlignRight)
+        center_col.addWidget(hint, alignment=Qt.AlignRight)
+
+        up.addLayout(center_col)
+        up.addStretch(1)
+
+        # Optional right icon button
+        self.rel_action_btn = QPushButton("⬆")
+        self.rel_action_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {Config.PRIMARY_COLOR};
                 color: white;
                 border: none;
-                border-radius: 6px;
-                padding: 10px;
-                font-weight: bold;
+                border-radius: 10px;
+                padding: 10px 14px;
+                font-weight: 700;
+                font-size: 18px;
+            }}
+            QPushButton:hover {{
+                background-color: #1D4ED8;
             }}
         """)
-        save_rel_btn.clicked.connect(self._save_relation)
-        form_layout.addWidget(save_rel_btn)
+        self.rel_action_btn.setFixedHeight(44)
+        self.rel_action_btn.clicked.connect(self._pick_evidence_files)
+        up.addWidget(self.rel_action_btn)
 
-        form_layout.addStretch()
-        splitter.addWidget(form_frame)
+        card_layout.addWidget(upload_box)
 
-        splitter.setSizes([350, 450])
-        layout.addWidget(splitter)
+        # Store for uploaded files
+        self._current_relation_evidences = []
+        self._relation_file_paths = []
 
         return widget
+
+    def _pick_evidence_files(self):
+        """Pick evidence files for relation."""
+        files, _ = QFileDialog.getOpenFileNames(
+            self,
+            "اختر المستندات",
+            "",
+            "Images/PDF (*.png *.jpg *.jpeg *.pdf);;All Files (*.*)"
+        )
+        if files:
+            self.rel_thumb.setText(str(len(files)))
+            self.rel_thumb.setToolTip("\n".join(files))
+            # Store file paths for later processing
+            self._relation_file_paths = files
 
     def _populate_relations_persons(self):
         """Populate the persons combo for relations."""
@@ -3335,11 +3506,19 @@ class OfficeSurveyWizard(QWidget):
         """Clear form for new relation."""
         self._editing_relation_index = None
         self._current_relation_evidences = []
-        self.relation_evidence_list.clear()
-        self.rel_share.setValue(2400)
+        self._relation_file_paths = []
+
+        # Reset form fields
+        self.rel_share.setValue(0)
         self.rel_start_date.setDate(QDate.currentDate())
-        self.rel_contract_number.clear()
         self.rel_notes.clear()
+        self.rel_contract_type.setCurrentIndex(0)
+        self.rel_type_combo.setCurrentIndex(0)
+        self.rel_evidence_type.setCurrentIndex(0)
+        self.rel_evidence_desc.clear()
+        self.rel_thumb.setText("📄")
+        self.rel_thumb.setToolTip("")
+
         self._populate_relations_persons()
 
     def _on_relation_selected(self, item):
@@ -3412,6 +3591,19 @@ class OfficeSurveyWizard(QWidget):
             QMessageBox.warning(self, "خطأ", "لا يوجد أشخاص لتحديد العلاقة")
             return
 
+        # Build evidence list from uploaded files
+        evidences = []
+        if hasattr(self, '_relation_file_paths') and self._relation_file_paths:
+            for file_path in self._relation_file_paths:
+                evidence = {
+                    "evidence_id": str(uuid.uuid4()),
+                    "document_type": self.rel_evidence_type.currentText() if self.rel_evidence_type.currentIndex() > 0 else "غير محدد",
+                    "description": self.rel_evidence_desc.text().strip() or None,
+                    "file_path": file_path,
+                    "upload_date": datetime.now().strftime("%Y-%m-%d")
+                }
+                evidences.append(evidence)
+
         relation = {
             "relation_id": str(uuid.uuid4()) if not hasattr(self, '_editing_relation_index') or self._editing_relation_index is None else self.context.relations[self._editing_relation_index]['relation_id'],
             "person_id": self.rel_person_combo.currentData(),
@@ -3419,10 +3611,11 @@ class OfficeSurveyWizard(QWidget):
             "relation_type": self.rel_type_combo.currentData(),
             "ownership_share": self.rel_share.value(),
             "start_date": self.rel_start_date.date().toString("yyyy-MM-dd"),
-            "contract_number": self.rel_contract_number.text().strip() or None,
-            "contract_date": self.rel_contract_date.date().toString("yyyy-MM-dd"),
+            "contract_type": self.rel_contract_type.currentText() if self.rel_contract_type.currentIndex() > 0 else None,
+            "evidence_type": self.rel_evidence_type.currentText() if self.rel_evidence_type.currentIndex() > 0 else None,
+            "evidence_description": self.rel_evidence_desc.text().strip() or None,
             "notes": self.rel_notes.toPlainText().strip(),
-            "evidences": getattr(self, '_current_relation_evidences', [])  # Linked evidences
+            "evidences": evidences
         }
 
         if hasattr(self, '_editing_relation_index') and self._editing_relation_index is not None:
@@ -3437,32 +3630,17 @@ class OfficeSurveyWizard(QWidget):
         self.next_btn.setEnabled(True)
 
     def _delete_relation(self):
-        """Delete selected relation."""
-        current = self.relations_list.currentItem()
-        if not current:
-            return
-        rel_id = current.data(Qt.UserRole)
-        self.context.relations = [r for r in self.context.relations if r['relation_id'] != rel_id]
-        self._refresh_relations_list()
-        self._add_relation()
-        Toast.show_toast(self, "تم حذف العلاقة", Toast.INFO)
+        """Delete current relation (for unified card design)."""
+        # In the new design, we don't have a list to select from
+        # This method is kept for compatibility but may need reimplementation
+        # if delete functionality is needed in the unified card design
+        pass
 
     def _refresh_relations_list(self):
-        """Refresh relations display."""
-        self.relations_list.clear()
-        rel_type_map = {
-            "owner": "مالك", "co_owner": "شريك", "tenant": "مستأجر",
-            "occupant": "شاغل", "heir": "وارث", "guardian": "ولي", "other": "أخرى"
-        }
-        for rel in self.context.relations:
-            type_ar = rel_type_map.get(rel['relation_type'], rel['relation_type'])
-            ev_count = len(rel.get('evidences', []))
-            item = QListWidgetItem(
-                f"🔗 {rel['person_name']} - {type_ar}\n"
-                f"   الحصة: {rel['ownership_share']}/2400 | الأدلة: {ev_count}"
-            )
-            item.setData(Qt.UserRole, rel['relation_id'])
-            self.relations_list.addItem(item)
+        """Refresh relations display (no-op for unified card design)."""
+        # The new Step 5 design uses a single form instead of a list
+        # This method is kept for compatibility but does nothing
+        pass
 
     # ==================== Step 6: Claim (S17-S18) ====================
 
