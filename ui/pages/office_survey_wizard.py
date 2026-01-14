@@ -3247,6 +3247,8 @@ class OfficeSurveyWizard(QWidget):
                 min-width: 200px;
             }
         """)
+        # Enable next button when person is selected
+        self.rel_person_combo.currentIndexChanged.connect(self._on_relation_person_changed)
 
         avatar = QLabel("👤")
         avatar.setAlignment(Qt.AlignCenter)
@@ -3501,6 +3503,12 @@ class OfficeSurveyWizard(QWidget):
         for person in self.context.persons:
             full_name = f"{person['first_name']} {person['last_name']}"
             self.rel_person_combo.addItem(full_name, person['person_id'])
+
+    def _on_relation_person_changed(self):
+        """Enable next button when a person is selected."""
+        if self.current_step == self.STEP_RELATIONS:
+            has_person = self.rel_person_combo.currentData() is not None
+            self.next_btn.setEnabled(has_person or len(self.context.relations) > 0)
 
     def _add_relation(self):
         """Clear form for new relation."""
@@ -4231,6 +4239,18 @@ class OfficeSurveyWizard(QWidget):
             if self.context.is_new_unit:
                 self._save_new_unit_data()
 
+        elif self.current_step == self.STEP_RELATIONS:
+            # Auto-save the current relation when moving to next step
+            if self.rel_person_combo.currentData():
+                self._save_relation()
+                return True
+            # Allow moving to next step even without saving if there are existing relations
+            elif len(self.context.relations) > 0:
+                return True
+            else:
+                QMessageBox.warning(self, "خطأ", "يجب إضافة علاقة واحدة على الأقل للمتابعة")
+                return False
+
         return True
 
     def _format_unit_building_info(self, building: Building):
@@ -4479,7 +4499,10 @@ class OfficeSurveyWizard(QWidget):
             self._populate_relations_persons()
             self._refresh_relations_list()
             self._add_relation()
-            self.next_btn.setEnabled(len(self.context.relations) > 0)
+            # Enable next button if there are existing relations OR if a person is selected
+            has_relations = len(self.context.relations) > 0
+            has_current_person = self.rel_person_combo.currentData() is not None
+            self.next_btn.setEnabled(has_relations or has_current_person)
 
         elif step == self.STEP_CLAIM:
             self._evaluate_for_claim()
