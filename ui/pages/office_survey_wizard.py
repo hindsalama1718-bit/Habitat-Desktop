@@ -303,10 +303,10 @@ class PersonDialog(QDialog):
 
         self.setWindowTitle("تعديل بيانات الشخص" if self.editing_mode else "إضافة شخص جديد")
         self.setModal(True)
-        self.setMinimumWidth(500)
+        self.setMinimumWidth(520)
         self.setStyleSheet("""
             QDialog {
-                background-color: white;
+                background-color: #f5f7fa;
             }
         """)
 
@@ -316,112 +316,87 @@ class PersonDialog(QDialog):
             self._load_person_data(person_data)
 
     def _setup_ui(self):
-        """Setup dialog UI."""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(20)
+        """Setup dialog UI using GridLayout."""
+        self.setLayoutDirection(Qt.RightToLeft)  # Set RTL for Arabic
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(15)
+        main_layout.setContentsMargins(30, 30, 30, 30)
 
         # Title
         title = QLabel("تعديل بيانات الشخص" if self.editing_mode else "إضافة شخص جديد")
-        title.setStyleSheet("font-size: 18px; font-weight: 700; color: #111827;")
-        title.setAlignment(Qt.AlignRight)
-        layout.addWidget(title)
+        title.setStyleSheet("font-size: 20px; font-weight: bold; color: #2c3e50;")
+        #title.setAlignment(Qt.AlignRight)
+        main_layout.addWidget(title)
 
-        # Form container
-        form_widget = QWidget()
-        form_container = QVBoxLayout(form_widget)
-        form_container.setSpacing(16)
-        form_container.setContentsMargins(0, 0, 0, 0)
+        # Form Grid
+        grid = QGridLayout()
+        grid.setSpacing(15)
 
-        # Row 1: First name and Last name (2 columns)
-        row1 = QHBoxLayout()
-        row1.setSpacing(12)
+        # Label style - consistent right alignment
+        label_style = "color: #555; font-weight: 600; font-size: 13px; text-align: right;"
 
-        # First name (right side)
-        first_name_container = QVBoxLayout()
-        first_name_container.setSpacing(6)
+        # Row 0: First Name | Last Name
         first_name_label = QLabel("الاسم الأول")
-        first_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        first_name_label.setAlignment(Qt.AlignRight)
-        self.first_name = QLineEdit()
-        self.first_name.setPlaceholderText("ادخل الاسم الأول")
-        self.first_name.setStyleSheet(self._input_style())
-        first_name_container.addWidget(first_name_label)
-        first_name_container.addWidget(self.first_name)
+        first_name_label.setStyleSheet(label_style)
+        #first_name_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(first_name_label, 0, 0)
 
-        # Last name (left side)
-        last_name_container = QVBoxLayout()
-        last_name_container.setSpacing(6)
         last_name_label = QLabel("الكنية")
-        last_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        last_name_label.setAlignment(Qt.AlignRight)
+        last_name_label.setStyleSheet(label_style)
+        #last_name_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(last_name_label, 0, 1)
+
+        self.first_name = QLineEdit()
+        self.first_name.setPlaceholderText("ادخل الاسم الاول")
+        self.first_name.setStyleSheet(self._input_style())
+        grid.addWidget(self.first_name, 1, 0)
+
         self.last_name = QLineEdit()
         self.last_name.setPlaceholderText("ادخل اسم العائلة")
         self.last_name.setStyleSheet(self._input_style())
-        last_name_container.addWidget(last_name_label)
-        last_name_container.addWidget(self.last_name)
+        grid.addWidget(self.last_name, 1, 1)
 
-        row1.addLayout(last_name_container)
-        row1.addLayout(first_name_container)
-        form_container.addLayout(row1)
-
-        # Row 2: Father name and Mother name (2 columns)
-        row2 = QHBoxLayout()
-        row2.setSpacing(12)
-
-        # Mother name (right side)
-        mother_name_container = QVBoxLayout()
-        mother_name_container.setSpacing(6)
+        # Row 2: Mother Name | Father Name
         mother_name_label = QLabel("اسم الأم")
-        mother_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        mother_name_label.setAlignment(Qt.AlignRight)
+        mother_name_label.setStyleSheet(label_style)
+       # mother_name_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(mother_name_label, 2, 0)
+
+        father_name_label = QLabel("اسم الأب")
+        father_name_label.setStyleSheet(label_style)
+       # father_name_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(father_name_label, 2, 1)
+
         self.mother_name = QLineEdit()
         self.mother_name.setPlaceholderText("ادخل اسم الأم")
         self.mother_name.setStyleSheet(self._input_style())
-        mother_name_container.addWidget(mother_name_label)
-        mother_name_container.addWidget(self.mother_name)
+        grid.addWidget(self.mother_name, 3, 0)
 
-        # Father name (left side)
-        father_name_container = QVBoxLayout()
-        father_name_container.setSpacing(6)
-        father_name_label = QLabel("اسم الأب")
-        father_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        father_name_label.setAlignment(Qt.AlignRight)
         self.father_name = QLineEdit()
-        self.father_name.setPlaceholderText("ادخل اسم الأب")
+        self.father_name.setPlaceholderText("ادخل اسم الاب")
         self.father_name.setStyleSheet(self._input_style())
-        father_name_container.addWidget(father_name_label)
-        father_name_container.addWidget(self.father_name)
+        grid.addWidget(self.father_name, 3, 1)
 
-        row2.addLayout(mother_name_container)
-        row2.addLayout(father_name_container)
-        form_container.addLayout(row2)
-
-        # Row 3: Birth date and National ID (2 columns)
-        row3 = QHBoxLayout()
-        row3.setSpacing(12)
-
-        # Birth date (right side)
-        birth_date_container = QVBoxLayout()
-        birth_date_container.setSpacing(6)
+        # Row 4: Birth Date | ID Number
         birth_date_label = QLabel("تاريخ الميلاد")
-        birth_date_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        birth_date_label.setAlignment(Qt.AlignRight)
+        birth_date_label.setStyleSheet(label_style)
+       # birth_date_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(birth_date_label, 4, 0)
+
+        national_id_label = QLabel("الرقم الوطني")
+        national_id_label.setStyleSheet(label_style)
+       # national_id_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(national_id_label, 4, 1)
+
         self.birth_date = QDateEdit()
         self.birth_date.setCalendarPopup(True)
         self.birth_date.setDate(QDate(1980, 1, 1))
         self.birth_date.setDisplayFormat("yyyy-MM-dd")
         self.birth_date.setStyleSheet(self._input_style())
-        birth_date_container.addWidget(birth_date_label)
-        birth_date_container.addWidget(self.birth_date)
+        grid.addWidget(self.birth_date, 5, 0)
 
-        # National ID (left side)
-        national_id_container = QVBoxLayout()
-        national_id_container.setSpacing(6)
-        national_id_label = QLabel("الرقم الوطني")
-        national_id_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        national_id_label.setAlignment(Qt.AlignRight)
-
+        # National ID with calendar button
         national_id_widget = QWidget()
         national_id_layout = QHBoxLayout(national_id_widget)
         national_id_layout.setContentsMargins(0, 0, 0, 0)
@@ -433,80 +408,75 @@ class PersonDialog(QDialog):
         self.national_id.setStyleSheet(self._input_style())
         self.national_id.textChanged.connect(self._validate_national_id)
 
-        # Calendar icon button
-        calendar_btn = QPushButton()
-        calendar_btn.setIcon(QIcon())
-        calendar_btn.setText("📅")
+        calendar_btn = QPushButton("📅")
         calendar_btn.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
-                border: 1px solid #E5E7EB;
+                border: 1px solid #e0e6ed;
                 border-radius: 6px;
-                padding: 8px 12px;
+                padding: 10px;
                 font-size: 16px;
             }
         """)
 
         national_id_layout.addWidget(self.national_id)
         national_id_layout.addWidget(calendar_btn)
+        grid.addWidget(national_id_widget, 5, 1)
 
-        national_id_container.addWidget(national_id_label)
-        national_id_container.addWidget(national_id_widget)
-
-        row3.addLayout(national_id_container)
-        row3.addLayout(birth_date_container)
-        form_container.addLayout(row3)
-
-        # National ID status
+        # National ID status (spans both columns)
         self.national_id_status = QLabel("")
         self.national_id_status.setAlignment(Qt.AlignRight)
-        form_container.addWidget(self.national_id_status)
+        grid.addWidget(self.national_id_status, 6, 0, 1, 2)
 
-        # Row 4: Email and Gender (2 columns)
-        row4 = QHBoxLayout()
-        row4.setSpacing(12)
-
-        # Email (right side)
-        email_container = QVBoxLayout()
-        email_container.setSpacing(6)
+        # Row 7: Email | Relationship
         email_label = QLabel("البريد الالكتروني")
-        email_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        email_label.setAlignment(Qt.AlignRight)
+        email_label.setStyleSheet(label_style)
+      #  email_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(email_label, 7, 0)
+
+        relationship_label = QLabel("علاقة الشخص بوحدة العقار")
+        relationship_label.setStyleSheet(label_style)
+       # relationship_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(relationship_label, 7, 1)
+
         self.email = QLineEdit()
         self.email.setPlaceholderText("*****@gmail.com")
         self.email.setStyleSheet(self._input_style())
-        email_container.addWidget(email_label)
-        email_container.addWidget(self.email)
+        grid.addWidget(self.email, 8, 0)
 
-        # Gender/Household (left side) - using household dropdown as shown in photo
-        household_container = QVBoxLayout()
-        household_container.setSpacing(6)
-        household_label = QLabel("علاقة الشخص بوحدة العقار")
-        household_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        household_label.setAlignment(Qt.AlignRight)
-        self.household_combo = QComboBox()
-        self.household_combo.addItem("اختر", None)
-        for hh in self.households:
-            self.household_combo.addItem(f"👨‍👩‍👧‍👦 {hh['head_name']}", hh['household_id'])
-        self.household_combo.setStyleSheet(self._input_style())
-        household_container.addWidget(household_label)
-        household_container.addWidget(self.household_combo)
+        self.relationship_combo = QComboBox()
+        self.relationship_combo.addItem("اختر", None)
+        relationship_types = [
+            ("owner", "مالك"),
+            ("tenant", "مستأجر"),
+            ("occupant", "ساكن"),
+            ("co_owner", "شريك في الملكية"),
+            ("heir", "وارث"),
+            ("guardian", "ولي/وصي"),
+            ("other", "أخرى")
+        ]
+        for code, ar_name in relationship_types:
+            self.relationship_combo.addItem(ar_name, code)
+        self.relationship_combo.setStyleSheet(self._input_style())
+        grid.addWidget(self.relationship_combo, 8, 1)
 
-        row4.addLayout(household_container)
-        row4.addLayout(email_container)
-        form_container.addLayout(row4)
+        # Row 9: Phone | Mobile
+        landline_label = QLabel("رقم الهاتف")
+        landline_label.setStyleSheet(label_style)
+        #landline_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(landline_label, 9, 0)
 
-        # Row 5: Mobile and Landline (2 columns)
-        row5 = QHBoxLayout()
-        row5.setSpacing(12)
-
-        # Mobile (right side)
-        mobile_container = QVBoxLayout()
-        mobile_container.setSpacing(6)
         mobile_label = QLabel("رقم الموبايل")
-        mobile_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        mobile_label.setAlignment(Qt.AlignRight)
+        mobile_label.setStyleSheet(label_style)
+       # mobile_label.setAlignment(Qt.AlignRight)
+        grid.addWidget(mobile_label, 9, 1)
 
+        self.landline = QLineEdit()
+        self.landline.setPlaceholderText("0000000")
+        self.landline.setStyleSheet(self._input_style())
+        grid.addWidget(self.landline, 10, 0)
+
+        # Mobile with country code
         mobile_widget = QWidget()
         mobile_layout = QHBoxLayout(mobile_widget)
         mobile_layout.setContentsMargins(0, 0, 0, 0)
@@ -524,25 +494,9 @@ class PersonDialog(QDialog):
 
         mobile_layout.addWidget(self.phone)
         mobile_layout.addWidget(country_code)
+        grid.addWidget(mobile_widget, 10, 1)
 
-        mobile_container.addWidget(mobile_label)
-        mobile_container.addWidget(mobile_widget)
-
-        # Landline (left side)
-        landline_container = QVBoxLayout()
-        landline_container.setSpacing(6)
-        landline_label = QLabel("رقم الهاتف")
-        landline_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500;")
-        landline_label.setAlignment(Qt.AlignRight)
-        self.landline = QLineEdit()
-        self.landline.setPlaceholderText("0000000")
-        self.landline.setStyleSheet(self._input_style())
-        landline_container.addWidget(landline_label)
-        landline_container.addWidget(self.landline)
-
-        row5.addLayout(landline_container)
-        row5.addLayout(mobile_container)
-        form_container.addLayout(row5)
+        main_layout.addLayout(grid)
 
         # Gender (hidden but kept for compatibility)
         self.gender = QComboBox()
@@ -550,85 +504,92 @@ class PersonDialog(QDialog):
         self.gender.addItem("أنثى", "female")
         self.gender.hide()
 
-        # Additional info section with icon
-        additional_info = QHBoxLayout()
-        additional_info.setSpacing(8)
-
-        info_icon = QLabel("📄")
-        info_icon.setStyleSheet("font-size: 18px;")
-
-        info_link = QLabel('<a href="#" style="color: #0072BC; text-decoration: none;">ارفع صور المستندات</a>')
-        info_link.setStyleSheet("font-size: 13px;")
-        info_link.setAlignment(Qt.AlignRight)
-
-        additional_info.addStretch()
-        additional_info.addWidget(info_link)
-        additional_info.addWidget(info_icon)
-
-        form_container.addLayout(additional_info)
-
-        # Is contact person
+        # Is contact person (hidden)
         self.is_contact = QCheckBox("شخص التواصل الرئيسي")
-        self.is_contact.hide()  # Hide for now as not shown in photo
+        self.is_contact.hide()
 
-        layout.addWidget(form_widget)
+        # Upload Area
+        upload_frame = QFrame()
+        upload_frame.setObjectName("uploadArea")
+        upload_frame.setStyleSheet("""
+            QFrame#uploadArea {
+                border: 2px dashed #d1d9e6;
+                border-radius: 10px;
+                background-color: #f0f4f8;
+            }
+        """)
+        upload_frame.setFixedHeight(100)
+        upload_layout = QVBoxLayout(upload_frame)
+        upload_label = QLabel("📄  ارفع صور المستندات")
+        #upload_label.setAlignment(Qt.AlignCenter)
+        upload_label.setStyleSheet("color: #4a90e2; background: transparent; font-size: 14px; font-weight: bold;")
+        upload_layout.addWidget(upload_label)
+        main_layout.addWidget(upload_frame)
 
         # Buttons
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(12)
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(12)
 
-        cancel_btn = QPushButton("إلغاء")
-        cancel_btn.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #374151;
-                border: 1px solid #D1D5DB;
+        save_btn = QPushButton("حفظ")
+        save_btn.setObjectName("saveBtn")
+        save_btn.setStyleSheet("""
+            QPushButton#saveBtn {
+                background-color: #4a90e2;
+                color: white;
                 border-radius: 8px;
-                padding: 12px 32px;
-                font-size: 14px;
-                font-weight: 600;
+                padding: 12px;
+                font-weight: bold;
+                font-size: 16px;
             }
-            QPushButton:hover {
-                background-color: #F9FAFB;
+            QPushButton#saveBtn:hover {
+                background-color: #357ABD;
+            }
+        """)
+        save_btn.clicked.connect(self._save_person)
+
+        cancel_btn = QPushButton("الغاء")
+        cancel_btn.setObjectName("cancelBtn")
+        cancel_btn.setStyleSheet("""
+            QPushButton#cancelBtn {
+                background-color: white;
+                color: #333;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                padding: 12px;
+                font-size: 16px;
+            }
+            QPushButton#cancelBtn:hover {
+                background-color: #f5f5f5;
             }
         """)
         cancel_btn.clicked.connect(self.reject)
 
-        save_btn = QPushButton("التالي")
-        save_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {Config.PRIMARY_COLOR};
-                color: white;
-                border: none;
-                border-radius: 8px;
-                padding: 12px 32px;
-                font-size: 14px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{
-                background-color: #0056A3;
-            }}
-        """)
-        save_btn.clicked.connect(self._save_person)
-
-        buttons_layout.addWidget(cancel_btn, 1)
-        buttons_layout.addWidget(save_btn, 1)
-
-        layout.addLayout(buttons_layout)
+        btn_layout.addWidget(save_btn)
+        btn_layout.addWidget(cancel_btn)
+        main_layout.addLayout(btn_layout)
 
     def _input_style(self):
         """Return standard input style."""
         return """
-            QLineEdit, QComboBox, QDateEdit, QSpinBox {
-                padding: 8px 12px;
-                border: 1px solid #E5E7EB;
-                border-radius: 6px;
-                background-color: #F9FAFB;
-                font-size: 12px;
+            QLineEdit, QComboBox, QDateEdit {
+                border: 1px solid #e0e6ed;
+                border-radius: 8px;
+                padding: 10px;
+                background-color: white;
+                color: #333;
+                font-size: 14px;
             }
             QLineEdit:focus, QComboBox:focus, QDateEdit:focus {
-                border: 1px solid #0072BC;
+                border: 1px solid #4a90e2;
                 background-color: white;
+            }
+            QComboBox::drop-down {
+                border: none;
+                padding-right: 10px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border: none;
             }
         """
 
@@ -681,11 +642,12 @@ class PersonDialog(QDialog):
             if bd.isValid():
                 self.birth_date.setDate(bd)
 
-        # Household
-        hh_id = person_data.get('household_id')
-        idx = self.household_combo.findData(hh_id)
-        if idx >= 0:
-            self.household_combo.setCurrentIndex(idx)
+        # Relationship type
+        rel_type = person_data.get('relationship_type')
+        if rel_type:
+            idx = self.relationship_combo.findData(rel_type)
+            if idx >= 0:
+                self.relationship_combo.setCurrentIndex(idx)
 
         self.is_contact.setChecked(person_data.get('is_contact_person', False))
 
@@ -719,7 +681,7 @@ class PersonDialog(QDialog):
             'phone': self.phone.text().strip() or None,
             'email': self.email.text().strip() or None,
             'landline': self.landline.text().strip() or None,
-            'household_id': self.household_combo.currentData(),
+            'relationship_type': self.relationship_combo.currentData(),
             'is_contact_person': self.is_contact.isChecked()
         }
 
@@ -1840,7 +1802,7 @@ class OfficeSurveyWizard(QWidget):
 
         layout.addWidget(self.unit_building_frame)
 
-        # White container frame for all units (matching photo)
+        # White container frame for all units
         units_main_frame = QFrame()
         units_main_frame.setStyleSheet("""
             QFrame {
@@ -1854,27 +1816,45 @@ class OfficeSurveyWizard(QWidget):
         units_main_layout.setSpacing(12)
         units_main_layout.setContentsMargins(16, 16, 16, 16)
 
-        # Header with icon + label on right and "أضف وحدة" button on left
+        # Header with title/subtitle on right and button on left
         header_layout = QHBoxLayout()
 
-        # Right side: Icon + Label
+        # Right side: Icon + Title and subtitle
         right_header = QHBoxLayout()
         right_header.setSpacing(8)
 
         # Icon
         icon_label = QLabel("🏘️")
-        icon_label.setStyleSheet("font-size: 20px;")
+        icon_label.setStyleSheet("font-size: 20px; border: none; background: transparent;")
         right_header.addWidget(icon_label)
 
-        # Label
+        # Title and subtitle
+        title_subtitle_layout = QVBoxLayout()
+        title_subtitle_layout.setSpacing(2)
+
         title_label = QLabel("اختر الوحدة العقارية")
         title_label.setStyleSheet("""
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 12px;
+            font-weight: 200;
             color: #111827;
+            border: none;
+            background: transparent;
         """)
-        right_header.addWidget(title_label)
+        title_label.setAlignment(Qt.AlignRight)
+        title_subtitle_layout.addWidget(title_label)
 
+        subtitle_label = QLabel("اختر أو أضف معلومات الوحدة العقارية")
+        subtitle_label.setStyleSheet("""
+            font-size: 9px;
+            font-weight: 100;
+            color: #6B7280;
+            border: none;
+            background: transparent;
+        """)
+        subtitle_label.setAlignment(Qt.AlignRight)
+        title_subtitle_layout.addWidget(subtitle_label)
+
+        right_header.addLayout(title_subtitle_layout)
         header_layout.addLayout(right_header)
         header_layout.addStretch()
 
@@ -1903,7 +1883,7 @@ class OfficeSurveyWizard(QWidget):
         # Units list container (inside white frame)
         self.units_container = QWidget()
         self.units_layout = QVBoxLayout(self.units_container)
-        self.units_layout.setSpacing(16)
+        self.units_layout.setSpacing(10)
         self.units_layout.setContentsMargins(0, 0, 0, 0)
 
         # Scroll area for units
@@ -2005,107 +1985,124 @@ class OfficeSurveyWizard(QWidget):
         # Determine unit display number (from unit_number or apartment_number)
         unit_display_num = unit.unit_number or unit.apartment_number or "?"
 
+        # Check if this is the selected unit
+        is_selected = self.context.unit and self.context.unit.unit_id == unit.unit_id
+
         # Create card frame
         card = QFrame()
         card.setObjectName("unitCard")
-        card.setStyleSheet("""
-            QFrame#unitCard {
-                background-color: white;
-                border: 1px solid #E5E7EB;
-                border-radius: 8px;
-            }
-            QFrame#unitCard:hover {
-                border-color: #0072BC;
-                background-color: #F0F9FF;
-            }
-        """)
+
+        # Different styles for selected and normal cards
+        if is_selected:
+            card.setStyleSheet("""
+                QFrame#unitCard {
+                    background-color: #f0f7ff;
+                    border: 2px solid #3498db;
+                    border-radius: 10px;
+                }
+                QFrame#unitCard QLabel {
+                    border: none;
+                    color: #2c3e50;
+                }
+            """)
+        else:
+            card.setStyleSheet("""
+                QFrame#unitCard {
+                    background-color: white;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 10px;
+                }
+                QFrame#unitCard:hover {
+                    border-color: #3498db;
+                    background-color: #f9fbfd;
+                }
+                QFrame#unitCard QLabel {
+                    border: none;
+                    color: #2c3e50;
+                }
+            """)
+
         card.setCursor(Qt.PointingHandCursor)
         card.mousePressEvent = lambda _: self._on_unit_card_clicked(unit)
         card.setLayoutDirection(Qt.RightToLeft)
 
-        card_layout = QVBoxLayout(card)
-        card_layout.setSpacing(10)
-        card_layout.setContentsMargins(16, 14, 16, 14)
+        # Main layout
+        main_layout = QVBoxLayout(card)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
 
         # Get unit data
         unit_type_val = unit.unit_type_display if hasattr(unit, 'unit_type_display') else unit.unit_type
         status_val = unit.apartment_status_display if hasattr(unit, 'apartment_status_display') else unit.apartment_status or "جيدة"
         floor_val = str(unit.floor_number) if unit.floor_number is not None else "-"
         rooms_val = str(getattr(unit, 'number_of_rooms', 0)) if hasattr(unit, 'number_of_rooms') else "-"
-        area_val = f"{unit.area_sqm} (م²)" if unit.area_sqm else "120 (م²)"
+        area_val = f"{unit.area_sqm}" if unit.area_sqm else "120"
 
-        # Create grid layout for labels and values (6 columns)
-        grid = QGridLayout()
-        grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(26)
-        grid.setVerticalSpacing(6)
+        # Top Row (Data Grid)
+        grid_layout = QHBoxLayout()
+        grid_layout.setContentsMargins(20, 15, 20, 15)
+        grid_layout.setSpacing(10)
 
-        # Define fields (RTL: first column appears on the right)
-        fields = [
-            ("رقم الوحدة", str(unit_display_num)),
-            ("رقم الطابق", floor_val),
-            ("عدد الغرف", rooms_val),
-            ("مساحة القسم", area_val),
-            ("نوع الوحدة", unit_type_val),
+        # Column Data (In order for RTL)
+        data_points = [
             ("حالة الوحدة", status_val),
+            ("نوع الوحدة", unit_type_val),
+            ("مساحة القسم", f"{area_val} (م²)"),
+            ("عدد الغرف", rooms_val),
+            ("رقم الطابق", floor_val),
+            ("رقم الوحدة", str(unit_display_num)),
         ]
 
-        # Add labels (row 0) and values (row 1) - starting from rightmost column (column 5)
-        for idx, (label_text, value_text) in enumerate(fields):
-            # Calculate column position from right (5, 4, 3, 2, 1, 0)
-            col = 5 - idx  # This ensures first item goes to column 5 (rightmost)
+        for label_text, value_text in data_points:
+            col = QVBoxLayout()
+            col.setSpacing(4)
 
-            # Label
-            label = QLabel(label_text)
-            label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet("""
-                color: #111827;
-                font-weight: 900;
-                font-size: 11px;
-                border: none;
-                background-color: transparent;
-            """)
-            grid.addWidget(label, 0, col)
+            lbl_title = QLabel(label_text)
+            lbl_title.setStyleSheet("font-weight: bold; color: #333; font-size: 11px;")
+            lbl_title.setAlignment(Qt.AlignCenter)
 
-            # Value
-            value = QLabel(value_text)
-            value.setAlignment(Qt.AlignCenter)
-            value.setStyleSheet("""
-                color: #6B7280;
-                font-weight: 700;
-                font-size: 12px;
-                border: none;
-                background-color: transparent;
-            """)
-            grid.addWidget(value, 1, col)
+            lbl_val = QLabel(str(value_text))
+            lbl_val.setStyleSheet("color: #666; font-size: 11px;")
+            lbl_val.setAlignment(Qt.AlignCenter)
 
-        card_layout.addLayout(grid)
+            col.addWidget(lbl_title)
+            col.addWidget(lbl_val)
+            grid_layout.addLayout(col)
 
-        # Description section (no border, no dashed line)
+        main_layout.addLayout(grid_layout)
+
+        # Divider line
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setStyleSheet("background-color: #eeeeee; border: none; max-height: 1px;")
+        main_layout.addWidget(line)
+
+        # Bottom Section (Description)
+        desc_layout = QVBoxLayout()
+        desc_layout.setContentsMargins(20, 12, 20, 15)
+        desc_layout.setSpacing(6)
+
         desc_title = QLabel("وصف العقار")
-        desc_title.setStyleSheet("""
-            color: #111827;
-            font-weight: 700;
-            font-size: 11px;
-            margin-top: 8px;
-            border: none;
-            background-color: transparent;
-        """)
-        desc_title.setAlignment(Qt.AlignRight | Qt.AlignRight)  # Force RTL alignment
-        card_layout.addWidget(desc_title)
+        desc_title.setStyleSheet("font-weight: bold; color: #333; font-size: 11px;")
+       # desc_title.setAlignment(Qt.AlignRight)
 
-        # Description text
-        desc_text = unit.property_description if unit.property_description else "وصف تفصيلي يشمل: عدد الغرف وأنواعها، المساحة التقريبية، الاتجاهات والحدود، وأي ميزات مميزة."
-        desc_label = QLabel(desc_text)
-        desc_label.setStyleSheet("""
-            color: #9CA3AF;
-            font-size: 11px;
-            border: none;
-            background-color: transparent;
-        """)
-        desc_label.setWordWrap(True)
-        desc_label.setAlignment(Qt.AlignRight | Qt.AlignRight)  # Force RTL alignment
-        card_layout.addWidget(desc_label)
+        desc_text_content = unit.property_description if unit.property_description else "وصف تفصيلي يشمل: عدد الغرف وأنواعها، المساحة التقريبية، الاتجاهات والحدود، وأي ميزات مميزة."
+        desc_text = QLabel(desc_text_content)
+        desc_text.setStyleSheet("color: #7f8c8d; font-size: 10px;")
+       # desc_text.setAlignment(Qt.AlignRight)
+        desc_text.setWordWrap(True)
+        desc_text.setMaximumHeight(40)
+
+        desc_layout.addWidget(desc_title)
+        desc_layout.addWidget(desc_text)
+        main_layout.addLayout(desc_layout)
+
+        # Checkmark for selected item
+        if is_selected:
+            check_label = QLabel("✓")
+            check_label.setStyleSheet("color: #3498db; font-size: 18px; font-weight: bold; border: none;")
+            check_label.setAlignment(Qt.AlignLeft)
+            main_layout.addWidget(check_label)
 
         return card
 
@@ -2162,6 +2159,7 @@ class OfficeSurveyWizard(QWidget):
         content_layout.setSpacing(16)
 
         # Row 1: Unit Type and Unit Status (equal width columns)
+        
         row1 = QHBoxLayout()
         row1.setSpacing(16)
 
@@ -2169,8 +2167,8 @@ class OfficeSurveyWizard(QWidget):
         type_container = QVBoxLayout()
         type_label = QLabel("نوع الوحدة")
         type_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;")
-        unit_type_combo = QComboBox()
-        unit_type_combo.setStyleSheet("""
+        self.unit_type_combo = QComboBox()
+        self.unit_type_combo.setStyleSheet("""
             QComboBox {
                 padding: 8px 12px;
                 border: 1px solid #D1D5DB;
@@ -2185,9 +2183,9 @@ class OfficeSurveyWizard(QWidget):
             ("warehouse", "مستودع"), ("garage", "مرآب"), ("other", "أخرى")
         ]
         for code, ar in unit_types:
-            unit_type_combo.addItem(ar, code)
+            self.unit_type_combo.addItem(ar, code)
         type_container.addWidget(type_label)
-        type_container.addWidget(unit_type_combo)
+        type_container.addWidget(self.unit_type_combo)
         row1.addLayout(type_container, 1)  # Stretch factor 1 = 50%
 
         # Unit Status (right column - 50%)
@@ -2221,10 +2219,10 @@ class OfficeSurveyWizard(QWidget):
         floor_container = QVBoxLayout()
         floor_label = QLabel("رقم الطابق")
         floor_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;")
-        floor_spin = QSpinBox()
-        floor_spin.setRange(-3, 100)
-        floor_spin.setValue(0)
-        floor_spin.setStyleSheet("""
+        self.floor_spin = QSpinBox()
+        self.floor_spin.setRange(-3, 100)
+        self.floor_spin.setValue(0)
+        self.floor_spin.setStyleSheet("""
             QSpinBox {
                 padding: 8px 12px;
                 border: 1px solid #D1D5DB;
@@ -2234,16 +2232,16 @@ class OfficeSurveyWizard(QWidget):
             }
         """)
         floor_container.addWidget(floor_label)
-        floor_container.addWidget(floor_spin)
+        floor_container.addWidget(self.floor_spin)
         row2.addLayout(floor_container, 1)  # Stretch factor 1 = 50%
 
         # Unit Number (right column - 50%)
         unit_num_container = QVBoxLayout()
         unit_num_label = QLabel("رقم الوحدة")
         unit_num_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;")
-        apt_number = QLineEdit()
-        apt_number.setPlaceholderText("0")
-        apt_number.setStyleSheet("""
+        self.apt_number = QLineEdit()
+        self.apt_number.setPlaceholderText("0")
+        self.apt_number.setStyleSheet("""
             QLineEdit {
                 padding: 8px 12px;
                 border: 1px solid #D1D5DB;
@@ -2253,7 +2251,7 @@ class OfficeSurveyWizard(QWidget):
             }
         """)
         unit_num_container.addWidget(unit_num_label)
-        unit_num_container.addWidget(apt_number)
+        unit_num_container.addWidget(self.apt_number)
         row2.addLayout(unit_num_container, 1)  # Stretch factor 1 = 50%
 
         content_layout.addLayout(row2)
@@ -2266,10 +2264,10 @@ class OfficeSurveyWizard(QWidget):
         rooms_container = QVBoxLayout()
         rooms_label = QLabel("عدد الغرف")
         rooms_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;")
-        unit_rooms = QSpinBox()
-        unit_rooms.setRange(0, 20)
-        unit_rooms.setValue(0)
-        unit_rooms.setStyleSheet("""
+        self.unit_rooms = QSpinBox()
+        self.unit_rooms.setRange(0, 20)
+        self.unit_rooms.setValue(0)
+        self.unit_rooms.setStyleSheet("""
             QSpinBox {
                 padding: 8px 12px;
                 border: 1px solid #D1D5DB;
@@ -2279,16 +2277,16 @@ class OfficeSurveyWizard(QWidget):
             }
         """)
         rooms_container.addWidget(rooms_label)
-        rooms_container.addWidget(unit_rooms)
+        rooms_container.addWidget(self.unit_rooms)
         row3.addLayout(rooms_container, 1)  # Stretch factor 1 = 50%
 
         # Area (right column - 50%)
         area_container = QVBoxLayout()
         area_label = QLabel("مساحة القسم")
         area_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;")
-        unit_area = QLineEdit()
-        unit_area.setPlaceholderText("المساحة التقريبية أو المقاسة (م²)")
-        unit_area.setStyleSheet("""
+        self.unit_area = QLineEdit()
+        self.unit_area.setPlaceholderText("المساحة التقريبية أو المقاسة (م²)")
+        self.unit_area.setStyleSheet("""
             QLineEdit {
                 padding: 8px 12px;
                 border: 1px solid #D1D5DB;
@@ -2298,7 +2296,7 @@ class OfficeSurveyWizard(QWidget):
             }
         """)
         area_container.addWidget(area_label)
-        area_container.addWidget(unit_area)
+        area_container.addWidget(self.unit_area)
         row3.addLayout(area_container, 1)  # Stretch factor 1 = 50%
 
         content_layout.addLayout(row3)
@@ -2306,10 +2304,10 @@ class OfficeSurveyWizard(QWidget):
         # Description (full width)
         desc_label = QLabel("وصف القطار")
         desc_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px;")
-        unit_desc = QTextEdit()
-        unit_desc.setMaximumHeight(100)
-        unit_desc.setPlaceholderText("وصف تفصيلي يشمل: عدد الغرف وأنواعها، المساحة التقريبية، الاتجاهات والحدود، وأي ميزات مميزة.")
-        unit_desc.setStyleSheet("""
+        self.unit_desc = QTextEdit()
+        self.unit_desc.setMaximumHeight(100)
+        self.unit_desc.setPlaceholderText("وصف تفصيلي يشمل: عدد الغرف وأنواعها، المساحة التقريبية، الاتجاهات والحدود، وأي ميزات مميزة.")
+        self.unit_desc.setStyleSheet("""
             QTextEdit {
                 padding: 8px 12px;
                 border: 1px solid #D1D5DB;
@@ -2320,7 +2318,7 @@ class OfficeSurveyWizard(QWidget):
             }
         """)
         content_layout.addWidget(desc_label)
-        content_layout.addWidget(unit_desc)
+        content_layout.addWidget(self.unit_desc)
 
         dialog_layout.addWidget(content_frame)
 
@@ -2372,20 +2370,20 @@ class OfficeSurveyWizard(QWidget):
 
             # Parse area value
             area_value = None
-            if unit_area.text().strip():
+            if self.unit_area.text().strip():
                 try:
-                    area_value = float(unit_area.text().strip())
+                    area_value = float(self.unit_area.text().strip())
                 except ValueError:
                     pass
 
             self.context.new_unit_data = {
-                'unit_type': unit_type_combo.currentData(),
+                'unit_type': self.unit_type_combo.currentData(),
                 'apartment_status': unit_status_combo.currentData(),
-                'floor_number': floor_spin.value(),
-                'apartment_number': apt_number.text(),
+                'floor_number': self.floor_spin.value(),
+                'apartment_number': self.apt_number.text(),
                 'area_sqm': area_value,
-                'number_of_rooms': unit_rooms.value(),
-                'property_description': unit_desc.toPlainText()
+                'number_of_rooms': self.unit_rooms.value(),
+                'property_description': self.unit_desc.toPlainText()
             }
             self.next_btn.setEnabled(True)
             QMessageBox.information(self, "تم", "سيتم إضافة الوحدة عند إتمام الاستمارة")
@@ -2400,13 +2398,21 @@ class OfficeSurveyWizard(QWidget):
     def _save_new_unit_data(self):
         """Save new unit data to context."""
         if self.context.is_new_unit:
+            # Parse area value
+            area_value = None
+            if self.unit_area.text().strip():
+                try:
+                    area_value = float(self.unit_area.text().strip())
+                except ValueError:
+                    pass
+
             self.context.new_unit_data = {
                 "unit_type": self.unit_type_combo.currentData(),
                 "floor_number": self.floor_spin.value(),
                 "apartment_number": self.apt_number.text().strip(),
-                "area": self.unit_area.value(),
-                "rooms": self.unit_rooms.value(),
-                "description": self.unit_desc.toPlainText().strip(),
+                "area_sqm": area_value,
+                "number_of_rooms": self.unit_rooms.value(),
+                "property_description": self.unit_desc.toPlainText().strip(),
                 "building_id": self.context.building.building_id if self.context.building else None
             }
 
@@ -2577,7 +2583,7 @@ class OfficeSurveyWizard(QWidget):
         # Right side (RTL): عدد الأفراد should appear on right (column 1)
         total_members_label = QLabel("عدد الأفراد")
         total_members_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px; border: none; background-color: transparent;")
-        total_members_label.setAlignment(Qt.AlignRight)
+        #total_members_label.setAlignment(Qt.AlignRight)
         family_info_grid.addWidget(total_members_label, 0, 1)
 
         self.hh_total_members = QSpinBox()
@@ -2597,7 +2603,7 @@ class OfficeSurveyWizard(QWidget):
         # Left side (RTL): رب الأسرة/العائل should appear on left (column 0)
         head_name_label = QLabel("رب الأسرة/العائل")
         head_name_label.setStyleSheet("font-size: 12px; color: #374151; font-weight: 500; margin-bottom: 4px; border: none; background-color: transparent;")
-        head_name_label.setAlignment(Qt.AlignRight)
+       # head_name_label.setAlignment(Qt.AlignRight)
         family_info_grid.addWidget(head_name_label, 0, 0)
 
         self.hh_head_name = QLineEdit()
@@ -2633,7 +2639,7 @@ class OfficeSurveyWizard(QWidget):
         composition_header = QLabel("👥 تكوين الأسرة")
         composition_header.setStyleSheet("""
             font-size: 13px;
-            font-weight: 700;
+            font-weight: 200;
             color: #1F2937;
             padding: 4px 0px;
         """)
@@ -2659,7 +2665,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 0-1: عدد البالغين الإناث (RIGHT side for RTL, column 1)
         adult_females_label = QLabel("عدد البالغين الإناث")
         adult_females_label.setStyleSheet(label_style)
-        adult_females_label.setAlignment(Qt.AlignRight)
+       # adult_females_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(adult_females_label, 0, 1)
 
         self.hh_adult_females = QSpinBox()
@@ -2671,7 +2677,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 0-1: عدد البالغين الذكور (LEFT side for RTL, column 0)
         adult_males_label = QLabel("عدد البالغين الذكور")
         adult_males_label.setStyleSheet(label_style)
-        adult_males_label.setAlignment(Qt.AlignRight)
+        #adult_males_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(adult_males_label, 0, 0)
 
         self.hh_adult_males = QSpinBox()
@@ -2683,7 +2689,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 2-3: عدد الأطفال الإناث (أقل من 18) (RIGHT side for RTL, column 1)
         female_children_label = QLabel("عدد الأطفال الإناث (أقل من 18)")
         female_children_label.setStyleSheet(label_style)
-        female_children_label.setAlignment(Qt.AlignRight)
+        #female_children_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(female_children_label, 2, 1)
 
         self.hh_female_children_under18 = QSpinBox()
@@ -2695,7 +2701,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 2-3: عدد الأطفال الذكور (أقل من 18) (LEFT side for RTL, column 0)
         male_children_label = QLabel("عدد الأطفال الذكور (أقل من 18)")
         male_children_label.setStyleSheet(label_style)
-        male_children_label.setAlignment(Qt.AlignRight)
+       # male_children_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(male_children_label, 2, 0)
 
         self.hh_male_children_under18 = QSpinBox()
@@ -2707,7 +2713,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 4-5: عدد كبار السن الإناث (أكبر من 65) (RIGHT side for RTL, column 1)
         female_elderly_label = QLabel("عدد كبار السن الإناث (أكبر من 65)")
         female_elderly_label.setStyleSheet(label_style)
-        female_elderly_label.setAlignment(Qt.AlignRight)
+        #female_elderly_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(female_elderly_label, 4, 1)
 
         self.hh_female_elderly_over65 = QSpinBox()
@@ -2719,7 +2725,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 4-5: عدد كبار السن الذكور (أكبر من 65) (LEFT side for RTL, column 0)
         male_elderly_label = QLabel("عدد كبار السن الذكور (أكبر من 65)")
         male_elderly_label.setStyleSheet(label_style)
-        male_elderly_label.setAlignment(Qt.AlignRight)
+        #male_elderly_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(male_elderly_label, 4, 0)
 
         self.hh_male_elderly_over65 = QSpinBox()
@@ -2731,7 +2737,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 6-7: عدد المعاقين الإناث (RIGHT side for RTL, column 1)
         disabled_females_label = QLabel("عدد المعاقين الإناث")
         disabled_females_label.setStyleSheet(label_style)
-        disabled_females_label.setAlignment(Qt.AlignRight)
+        #disabled_females_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(disabled_females_label, 6, 1)
 
         self.hh_disabled_females = QSpinBox()
@@ -2743,7 +2749,7 @@ class OfficeSurveyWizard(QWidget):
         # Row 6-7: عدد المعاقين الذكور (LEFT side for RTL, column 0)
         disabled_males_label = QLabel("عدد المعاقين الذكور")
         disabled_males_label.setStyleSheet(label_style)
-        disabled_males_label.setAlignment(Qt.AlignRight)
+        #disabled_males_label.setAlignment(Qt.AlignRight)
         composition_grid.addWidget(disabled_males_label, 6, 0)
 
         self.hh_disabled_males = QSpinBox()
@@ -3037,8 +3043,17 @@ class OfficeSurveyWizard(QWidget):
         name_label.setAlignment(Qt.AlignRight)
         info_layout.addWidget(name_label)
 
-        # Person role/status
-        role_text = "مالك" if person.get('is_contact_person') else "ساكن"
+        # Person role/status - use relationship_type if available
+        rel_type_map = {
+            "owner": "مالك",
+            "tenant": "مستأجر",
+            "occupant": "ساكن",
+            "co_owner": "شريك في الملكية",
+            "heir": "وارث",
+            "guardian": "ولي/وصي",
+            "other": "أخرى"
+        }
+        role_text = rel_type_map.get(person.get('relationship_type'), "ساكن")
         role_label = QLabel(role_text)
         role_label.setStyleSheet("""
             font-size: 12px;
@@ -3247,6 +3262,8 @@ class OfficeSurveyWizard(QWidget):
                 min-width: 200px;
             }
         """)
+        # Enable next button when person is selected
+        self.rel_person_combo.currentIndexChanged.connect(self._on_relation_person_changed)
 
         avatar = QLabel("👤")
         avatar.setAlignment(Qt.AlignCenter)
@@ -3502,6 +3519,12 @@ class OfficeSurveyWizard(QWidget):
             full_name = f"{person['first_name']} {person['last_name']}"
             self.rel_person_combo.addItem(full_name, person['person_id'])
 
+    def _on_relation_person_changed(self):
+        """Enable next button when a person is selected."""
+        if self.current_step == self.STEP_RELATIONS:
+            has_person = self.rel_person_combo.currentData() is not None
+            self.next_btn.setEnabled(has_person or len(self.context.relations) > 0)
+
     def _add_relation(self):
         """Clear form for new relation."""
         self._editing_relation_index = None
@@ -3647,73 +3670,177 @@ class OfficeSurveyWizard(QWidget):
     def _create_claim_step(self) -> QWidget:
         """Create Step 6: Claim Creation (S17-S18)."""
         widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(16)
-
-        # Auto-evaluation info (S17)
-        eval_frame = QFrame()
-        eval_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: #FEF3C7;
-                border: 1px solid #F59E0B;
-                border-radius: 8px;
-                padding: 16px;
-            }}
+        widget.setLayoutDirection(Qt.RightToLeft)
+        widget.setStyleSheet("""
+            QLabel {
+                color: #444;
+                font-weight: bold;
+                font-size: 13px;
+            }
+            QLineEdit, QComboBox, QDateEdit, QTextEdit {
+                background-color: #ffffff;
+                border: 1px solid #dcdfe6;
+                border-radius: 6px;
+                padding: 10px;
+                color: #606266;
+            }
+            QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
+                border: 1px solid #409eff;
+            }
         """)
-        eval_layout = QVBoxLayout(eval_frame)
 
-        eval_title = QLabel("📋 تقييم العلاقات للمطالبة (S17)")
-        eval_title.setStyleSheet("font-weight: bold; font-size: 11pt;")
-        eval_layout.addWidget(eval_title)
+        main_layout = QVBoxLayout(widget)
+        main_layout.setContentsMargins(40, 20, 40, 40)
+        main_layout.setSpacing(10)
 
-        self.claim_eval_label = QLabel("")
-        self.claim_eval_label.setWordWrap(True)
-        eval_layout.addWidget(self.claim_eval_label)
+        # --- Header Section (Outside the Card) ---
+        header_layout = QHBoxLayout()
 
-        layout.addWidget(eval_frame)
+        title_vbox = QVBoxLayout()
+        title_lbl = QLabel("تسجيل الحالة")
+        title_lbl.setStyleSheet("font-size: 22px; color: #2c3e50; font-weight: bold;")
+        #title_lbl.setAlignment(Qt.AlignRight)
+        sub_lbl = QLabel("ربط المطالبين بالوحدات العقارية وتتبع مطالبات تسجيل حقوق الحيازة")
+        sub_lbl.setStyleSheet("font-weight: normal; color: #909399; font-size: 14px;")
+        sub_lbl.setAlignment(Qt.AlignRight)
+        title_vbox.addWidget(title_lbl)
+        title_vbox.addWidget(sub_lbl)
 
-        # Claim form (S18)
-        claim_group = QGroupBox("بيانات المطالبة")
-        claim_form = QFormLayout(claim_group)
-        claim_form.setSpacing(12)
+        icon_label = QLabel()
+        icon_label.setFixedSize(50, 50)
+        icon_label.setAlignment(Qt.AlignCenter)
+        icon_label.setStyleSheet("font-size: 24px; background: #ffffff; border-radius: 10px; border: 1px solid #ebeef5;")
+
+        header_layout.addWidget(icon_label)
+        header_layout.addLayout(title_vbox)
+        header_layout.addStretch()
+        main_layout.addLayout(header_layout)
+        main_layout.addSpacing(10)
+
+        # --- The Main Card (QFrame) ---
+        card = QFrame()
+        card.setStyleSheet("""
+            QFrame#ClaimCard {
+                background-color: white;
+                border-radius: 15px;
+                border: 1px solid #e4e7ed;
+            }
+        """)
+        card.setObjectName("ClaimCard")
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(25, 25, 25, 25)
+        card_layout.setSpacing(20)
+
+        # 1. Grid Layout for top fields (RTL order: right to left)
+        grid = QGridLayout()
+        grid.setSpacing(15)
+
+        # Ensure columns stretch to fill full width
+        for i in range(4):
+            grid.setColumnStretch(i, 1)
+
+        def add_field(label_text, field_widget, row, col):
+            v = QVBoxLayout()
+            lbl = QLabel(label_text)
+          #  lbl.setAlignment(Qt.AlignRight)
+            v.addWidget(lbl)
+            v.addWidget(field_widget)
+            grid.addLayout(v, row, col)
+
+        # Row 1 (RTL): معرف المطالب | معرف الوحدة المطالب بها | نوع الحالة | طبيعة الأعمال
+        self.claim_person_search = QLineEdit()
+        self.claim_person_search.setPlaceholderText("اسم الشخص")
+        add_field("معرف المطالب", self.claim_person_search, 0, 0)
+
+        self.claim_unit_search = QLineEdit()
+        self.claim_unit_search.setPlaceholderText("رقم الوحدة")
+        add_field("معرف الوحدة المطالب بها", self.claim_unit_search, 0, 1)
 
         self.claim_type_combo = QComboBox()
-        claim_types = [("ownership", "ملكية"), ("occupancy", "إشغال"), ("tenancy", "إيجار")]
-        for code, ar in claim_types:
-            self.claim_type_combo.addItem(ar, code)
-        claim_form.addRow("نوع المطالبة:", self.claim_type_combo)
+        self.claim_type_combo.addItem("اختر", "")
+        self.claim_type_combo.addItem("ملكية", "ownership")
+        self.claim_type_combo.addItem("إشغال", "occupancy")
+        self.claim_type_combo.addItem("إيجار", "tenancy")
+        add_field("نوع الحالة", self.claim_type_combo, 0, 2)
+
+        self.claim_business_nature = QComboBox()
+        self.claim_business_nature.addItem("اختر", "")
+        self.claim_business_nature.addItem("سكني", "residential")
+        self.claim_business_nature.addItem("تجاري", "commercial")
+        self.claim_business_nature.addItem("زراعي", "agricultural")
+        add_field("طبيعة الأعمال", self.claim_business_nature, 0, 3)
+
+        # Row 2 (RTL): حالة الحالة | المصدر | تاريخ المسح | الأولوية
+        self.claim_status_combo = QComboBox()
+        self.claim_status_combo.addItem("اختر", "")
+        self.claim_status_combo.addItem("جديد", "new")
+        self.claim_status_combo.addItem("قيد المراجعة", "under_review")
+        self.claim_status_combo.addItem("مكتمل", "completed")
+        self.claim_status_combo.addItem("معلق", "pending")
+        add_field("حالة الحالة", self.claim_status_combo, 1, 0)
+
+        self.claim_source_combo = QComboBox()
+        self.claim_source_combo.addItem("اختر", "")
+        self.claim_source_combo.addItem("مسح ميداني", "field_survey")
+        self.claim_source_combo.addItem("طلب مباشر", "direct_request")
+        self.claim_source_combo.addItem("إحالة", "referral")
+        add_field("المصدر", self.claim_source_combo, 1, 1)
+
+        self.claim_survey_date = QDateEdit()
+        self.claim_survey_date.setCalendarPopup(True)
+        self.claim_survey_date.setDisplayFormat("dd-MM-yyyy")
+        self.claim_survey_date.setDate(QDate.currentDate())
+        add_field("تاريخ المسح", self.claim_survey_date, 1, 2)
 
         self.claim_priority_combo = QComboBox()
-        priorities = [("low", "منخفض"), ("normal", "عادي"), ("high", "عالي"), ("urgent", "عاجل")]
-        for code, ar in priorities:
-            self.claim_priority_combo.addItem(ar, code)
-        self.claim_priority_combo.setCurrentIndex(1)
-        claim_form.addRow("الأولوية:", self.claim_priority_combo)
+        self.claim_priority_combo.addItem("اختر", "")
+        self.claim_priority_combo.addItem("منخفض", "low")
+        self.claim_priority_combo.addItem("عادي", "normal")
+        self.claim_priority_combo.addItem("عالي", "high")
+        self.claim_priority_combo.addItem("عاجل", "urgent")
+        self.claim_priority_combo.setCurrentIndex(2)  # Default to normal
+        add_field("الأولوية", self.claim_priority_combo, 1, 3)
 
+        card_layout.addLayout(grid)
+
+        # 2. Notes Section
+        notes_label = QLabel("ملاحظات المراجعة")
+       # notes_label.setAlignment(Qt.AlignRight)
+        card_layout.addWidget(notes_label)
         self.claim_notes = QTextEdit()
-        self.claim_notes.setMaximumHeight(100)
-        claim_form.addRow("ملاحظات:", self.claim_notes)
+        self.claim_notes.setPlaceholderText("ملاحظات إضافية")
+        self.claim_notes.setMinimumHeight(100)
+        self.claim_notes.setMaximumHeight(120)
+        card_layout.addWidget(self.claim_notes)
 
-        layout.addWidget(claim_group)
+        # 3. Next Action Date Section
+        next_date_label = QLabel("تاريخ الإجراء التالي")
+       # next_date_label.setAlignment(Qt.AlignRight)
+        card_layout.addWidget(next_date_label)
+        next_date_container = QHBoxLayout()
+        self.claim_next_action_date = QDateEdit()
+        self.claim_next_action_date.setCalendarPopup(True)
+        self.claim_next_action_date.setDisplayFormat("dd-MM-yyyy")
+        self.claim_next_action_date.setMinimumHeight(45)
+        next_date_container.addWidget(self.claim_next_action_date)
+        card_layout.addLayout(next_date_container)
 
-        # Create claim button
-        create_claim_btn = QPushButton("✅ إنشاء المطالبة")
-        create_claim_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {Config.SUCCESS_COLOR};
-                color: white;
-                border: none;
-                border-radius: 8px;
-                padding: 14px 28px;
-                font-size: 12pt;
-                font-weight: bold;
-            }}
+        # 4. Status Bar (Inside Card) - Evidence available indicator
+        self.claim_eval_label = QLabel("الأدلة متوفرة")
+        self.claim_eval_label.setAlignment(Qt.AlignCenter)
+        self.claim_eval_label.setFixedHeight(50)
+        self.claim_eval_label.setStyleSheet("""
+            background-color: #e1f7ef;
+            color: #10b981;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 15px;
         """)
-        create_claim_btn.clicked.connect(self._create_claim)
-        layout.addWidget(create_claim_btn)
+        card_layout.addWidget(self.claim_eval_label)
 
-        layout.addStretch()
+        main_layout.addWidget(card)
+        main_layout.addStretch()
+
         return widget
 
     def _evaluate_for_claim(self):
@@ -3726,32 +3853,53 @@ class OfficeSurveyWizard(QWidget):
         # Count total evidences
         total_evidences = sum(len(r.get('evidences', [])) for r in self.context.relations)
 
-        eval_text = f"📊 تحليل العلاقات المسجلة:\n\n"
-        eval_text += f"• {len(owners)} مالك/شريك في الملكية\n"
-        eval_text += f"• {len(tenants)} مستأجر\n"
-        eval_text += f"• {len(occupants)} شاغل\n"
-        eval_text += f"• {len(heirs)} وارث\n"
-        eval_text += f"• {total_evidences} وثيقة داعمة\n\n"
+        # Auto-populate unit ID if available
+        if self.context.unit:
+            self.claim_unit_search.setText(str(self.context.unit.unit_id or ""))
 
-        # Calculate total ownership share
-        total_share = sum(r.get('ownership_share', 0) for r in owners)
+        # Auto-populate claimant name from first person
+        if self.context.persons:
+            first_person = self.context.persons[0]
+            full_name = f"{first_person.get('first_name', '')} {first_person.get('last_name', '')}"
+            self.claim_person_search.setText(full_name.strip())
 
-        if owners:
-            eval_text += f"✅ يمكن إنشاء مطالبة ملكية (الحصة الإجمالية: {total_share}/2400)"
-            self.claim_type_combo.setCurrentIndex(0)
-        elif heirs:
-            eval_text += "✅ يمكن إنشاء مطالبة ملكية (إرث)"
-            self.claim_type_combo.setCurrentIndex(0)
+        # Auto-select claim type based on relations
+        if owners or heirs:
+            # Find index for "ownership"
+            for i in range(self.claim_type_combo.count()):
+                if self.claim_type_combo.itemData(i) == "ownership":
+                    self.claim_type_combo.setCurrentIndex(i)
+                    break
         elif tenants:
-            eval_text += "✅ يمكن إنشاء مطالبة إيجار"
-            self.claim_type_combo.setCurrentIndex(2)
+            for i in range(self.claim_type_combo.count()):
+                if self.claim_type_combo.itemData(i) == "tenancy":
+                    self.claim_type_combo.setCurrentIndex(i)
+                    break
         elif occupants:
-            eval_text += "✅ يمكن إنشاء مطالبة إشغال"
-            self.claim_type_combo.setCurrentIndex(1)
-        else:
-            eval_text += "⚠️ لم يتم تحديد علاقات - يمكن المتابعة يدوياً"
+            for i in range(self.claim_type_combo.count()):
+                if self.claim_type_combo.itemData(i) == "occupancy":
+                    self.claim_type_combo.setCurrentIndex(i)
+                    break
 
-        self.claim_eval_label.setText(eval_text)
+        # Update status bar based on evidence availability
+        if total_evidences > 0:
+            self.claim_eval_label.setText(f"الأدلة متوفرة ({total_evidences})")
+            self.claim_eval_label.setStyleSheet("""
+                background-color: #e1f7ef;
+                color: #10b981;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 15px;
+            """)
+        else:
+            self.claim_eval_label.setText("لا توجد أدلة مرفقة")
+            self.claim_eval_label.setStyleSheet("""
+                background-color: #fef3c7;
+                color: #f59e0b;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 15px;
+            """)
 
     def _create_claim(self):
         """Create the claim (S18)."""
@@ -3769,9 +3917,13 @@ class OfficeSurveyWizard(QWidget):
         self.context.claim_data = {
             "claim_type": self.claim_type_combo.currentData(),
             "priority": self.claim_priority_combo.currentData(),
+            "business_nature": self.claim_business_nature.currentData() if hasattr(self, 'claim_business_nature') else None,
+            "source": self.claim_source_combo.currentData() if hasattr(self, 'claim_source_combo') else "OFFICE_SUBMISSION",
+            "case_status": self.claim_status_combo.currentData() if hasattr(self, 'claim_status_combo') else "new",
+            "survey_date": self.claim_survey_date.date().toString("yyyy-MM-dd") if hasattr(self, 'claim_survey_date') else None,
+            "next_action_date": self.claim_next_action_date.date().toString("yyyy-MM-dd") if hasattr(self, 'claim_next_action_date') else None,
             "notes": self.claim_notes.toPlainText().strip(),
             "status": "draft",
-            "source": "OFFICE_SUBMISSION",
             "claimant_person_ids": claimant_ids,
             "evidence_ids": [e['evidence_id'] for e in all_evidences],
             "unit_id": self.context.unit.unit_id if self.context.unit else None,
@@ -4231,6 +4383,18 @@ class OfficeSurveyWizard(QWidget):
             if self.context.is_new_unit:
                 self._save_new_unit_data()
 
+        elif self.current_step == self.STEP_RELATIONS:
+            # Auto-save the current relation when moving to next step
+            if self.rel_person_combo.currentData():
+                self._save_relation()
+                return True
+            # Allow moving to next step even without saving if there are existing relations
+            elif len(self.context.relations) > 0:
+                return True
+            else:
+                QMessageBox.warning(self, "خطأ", "يجب إضافة علاقة واحدة على الأقل للمتابعة")
+                return False
+
         return True
 
     def _format_unit_building_info(self, building: Building):
@@ -4479,7 +4643,10 @@ class OfficeSurveyWizard(QWidget):
             self._populate_relations_persons()
             self._refresh_relations_list()
             self._add_relation()
-            self.next_btn.setEnabled(len(self.context.relations) > 0)
+            # Enable next button if there are existing relations OR if a person is selected
+            has_relations = len(self.context.relations) > 0
+            has_current_person = self.rel_person_combo.currentData() is not None
+            self.next_btn.setEnabled(has_relations or has_current_person)
 
         elif step == self.STEP_CLAIM:
             self._evaluate_for_claim()
