@@ -3901,8 +3901,8 @@ class OfficeSurveyWizard(QWidget):
                 font-size: 15px;
             """)
 
-    def _create_claim(self):
-        """Create the claim (S18)."""
+    def _save_claim_data(self):
+        """Save claim data from the form to context (auto-save on navigation)."""
         # Collect all claimant person IDs
         claimant_ids = [r['person_id'] for r in self.context.relations
                         if r['relation_type'] in ('owner', 'co_owner', 'heir')]
@@ -3930,6 +3930,9 @@ class OfficeSurveyWizard(QWidget):
             "building_id": self.context.building.building_id if self.context.building else None
         }
 
+    def _create_claim(self):
+        """Create the claim (S18) - legacy method, now uses _save_claim_data."""
+        self._save_claim_data()
         Toast.show_toast(self, "تم إعداد المطالبة - انتقل للمراجعة النهائية", Toast.SUCCESS)
         self.next_btn.setEnabled(True)
 
@@ -4395,6 +4398,11 @@ class OfficeSurveyWizard(QWidget):
                 QMessageBox.warning(self, "خطأ", "يجب إضافة علاقة واحدة على الأقل للمتابعة")
                 return False
 
+        elif self.current_step == self.STEP_CLAIM:
+            # Auto-save claim data when moving to review step
+            self._save_claim_data()
+            return True
+
         return True
 
     def _format_unit_building_info(self, building: Building):
@@ -4650,7 +4658,8 @@ class OfficeSurveyWizard(QWidget):
 
         elif step == self.STEP_CLAIM:
             self._evaluate_for_claim()
-            self.next_btn.setEnabled(False)
+            # Enable next button - form can be filled and proceed to review
+            self.next_btn.setEnabled(True)
 
         elif step == self.STEP_REVIEW:
             self._populate_review()
