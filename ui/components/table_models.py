@@ -11,6 +11,7 @@ from models.building import Building
 from models.unit import PropertyUnit
 from models.person import Person
 from models.claim import Claim
+from ui.components.base_table_model import BaseTableModel
 
 
 class BuildingsTableModel(QAbstractTableModel):
@@ -223,47 +224,24 @@ class PersonsTableModel(QAbstractTableModel):
         self.endResetModel()
 
 
-class ImportRecordsTableModel(QAbstractTableModel):
+class ImportRecordsTableModel(BaseTableModel):
     """Table model for import validation results."""
 
     def __init__(self, records=None, parent=None):
-        super().__init__(parent)
-        self._records = records or []
-        self._columns = [
-            ("record_id", "Record ID"),
-            ("record_type", "Type"),
-            ("status", "Status"),
-            ("message", "Message"),
+        columns = [
+            ("record_id", "Record ID", "Record ID"),
+            ("record_type", "Type", "Type"),
+            ("status", "Status", "Status"),
+            ("message", "Message", "Message"),
         ]
-
-    def rowCount(self, parent=QModelIndex()) -> int:
-        return len(self._records)
-
-    def columnCount(self, parent=QModelIndex()) -> int:
-        return len(self._columns)
+        super().__init__(items=records or [], columns=columns)
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
-        if not index.isValid() or not self._records:
-            return QVariant()
-
-        record = self._records[index.row()]
-        column_key = self._columns[index.column()][0]
-
-        if role == Qt.DisplayRole:
-            if column_key == "record_id":
-                return record.record_id
-            elif column_key == "record_type":
-                return record.record_type.title()
-            elif column_key == "status":
-                return record.status.value.title()
-            elif column_key == "message":
-                if record.errors:
-                    return "; ".join(record.errors)
-                elif record.warnings:
-                    return "; ".join(record.warnings)
-                return "Valid"
-
-        elif role == Qt.BackgroundRole:
+        """Override to add BackgroundRole and UserRole support."""
+        if role == Qt.BackgroundRole:
+            if not index.isValid() or index.row() >= len(self._items):
+                return QVariant()
+            record = self._items[index.row()]
             status = record.status.value
             colors = {
                 "valid": QColor("#e8f5e9"),
@@ -272,19 +250,28 @@ class ImportRecordsTableModel(QAbstractTableModel):
                 "duplicate": QColor("#e3f2fd"),
             }
             return QBrush(colors.get(status, QColor("#ffffff")))
-
         elif role == Qt.UserRole:
-            return record.record_id
+            if not index.isValid() or index.row() >= len(self._items):
+                return QVariant()
+            return self._items[index.row()].record_id
+        return super().data(index, role)
 
-        return QVariant()
-
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole) -> Any:
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self._columns[section][1]
-        return QVariant()
+    def get_item_value(self, item, field_name: str):
+        """Extract field value from record object."""
+        if field_name == "record_id":
+            return item.record_id
+        elif field_name == "record_type":
+            return item.record_type.title()
+        elif field_name == "status":
+            return item.status.value.title()
+        elif field_name == "message":
+            if item.errors:
+                return "; ".join(item.errors)
+            elif item.warnings:
+                return "; ".join(item.warnings)
+            return "Valid"
+        return ""
 
     def set_records(self, records):
         """Update the records list."""
-        self.beginResetModel()
-        self._records = records
-        self.endResetModel()
+        self.set_items(records)
