@@ -15,33 +15,40 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QComboBox, QLineEdit,
     QGroupBox, QFormLayout, QMessageBox, QHeaderView,
-    QDialog, QDialogButtonBox, QCheckBox, QSpinBox
+    QDialogButtonBox, QCheckBox, QSpinBox
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIcon
 
 from utils.i18n import I18n
 from repositories.database import Database
+from ui.components.dialogs.base_dialog import BaseDialog
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class VocabularyEditDialog(QDialog):
+class VocabularyEditDialog(BaseDialog):
     """Dialog for adding/editing vocabulary terms."""
 
-    def __init__(self, parent=None, term_data: dict = None, i18n: I18n = None):
-        super().__init__(parent)
-        self.i18n = i18n or I18n()
+    def __init__(self, parent=None, term_data: dict = None, i18n: I18n = None, db=None):
         self.term_data = term_data or {}
-        self.setWindowTitle(
-            self.i18n.t("edit_term") if term_data else self.i18n.t("add_term")
+        i18n = i18n or I18n()
+
+        # Determine title key based on edit/add mode
+        title_key = "edit_term" if term_data else "add_term"
+
+        super().__init__(
+            db=db,
+            i18n=i18n,
+            title_key=title_key,
+            parent=parent,
+            size=(400, 300)
         )
-        self.setMinimumWidth(400)
         self._setup_ui()
 
     def _setup_ui(self):
-        layout = QVBoxLayout(self)
+        layout = self.main_layout
 
         form = QFormLayout()
 
