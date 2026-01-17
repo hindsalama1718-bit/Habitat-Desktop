@@ -29,7 +29,6 @@ from repositories.database import Database
 from repositories.building_repository import BuildingRepository
 from services.export_service import ExportService
 from services.validation_service import ValidationService
-from ui.components.table_models import BuildingsTableModel
 from ui.components.toast import Toast
 from ui.components.dialogs import ExportDialog
 from ui.components.message_dialog import MessageDialog
