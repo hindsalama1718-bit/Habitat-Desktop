@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (
     QAbstractItemView, QGraphicsDropShadowEffect, QMessageBox, QCheckBox,
     QGroupBox, QScrollArea
 )
-from PyQt5.QtCore import Qt, pyqtSignal, QAbstractTableModel, QModelIndex
+from PyQt5.QtCore import Qt, pyqtSignal, QModelIndex
 from PyQt5.QtGui import QColor
 import re
 
@@ -21,74 +21,46 @@ from repositories.person_repository import PersonRepository
 from models.person import Person
 from services.validation_service import ValidationService
 from ui.components.toast import Toast
+from ui.components.base_table_model import BaseTableModel
 from utils.i18n import I18n
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class PersonsTableModel(QAbstractTableModel):
+class PersonsTableModel(BaseTableModel):
     """Table model for persons."""
 
     def __init__(self, is_arabic: bool = True):
-        super().__init__()
-        self._persons = []
+        columns = [
+            ('full_name', "Name", "الاسم"),
+            ('father_name', "Father Name", "اسم الأب"),
+            ('national_id', "National ID", "الرقم الوطني"),
+            ('nationality', "Nationality", "الجنسية"),
+            ('gender', "Gender", "الجنس"),
+            ('phone', "Phone", "الهاتف"),
+            ('email', "Email", "البريد"),
+        ]
+        super().__init__(items=[], columns=columns)
         self._is_arabic = is_arabic
-        self._headers_en = ["Name", "Father Name", "National ID", "Nationality", "Gender", "Phone", "Email"]
-        self._headers_ar = ["الاسم", "اسم الأب", "الرقم الوطني", "الجنسية", "الجنس", "الهاتف", "البريد"]
 
-    def rowCount(self, parent=None):
-        return len(self._persons)
-
-    def columnCount(self, parent=None):
-        return len(self._headers_en)
-
-    def data(self, index: QModelIndex, role=Qt.DisplayRole):
-        if not index.isValid() or index.row() >= len(self._persons):
-            return None
-
-        person = self._persons[index.row()]
-        col = index.column()
-
-        if role == Qt.DisplayRole:
-            if col == 0:
-                return person.full_name_ar if self._is_arabic else person.full_name
-            elif col == 1:
-                return person.father_name_ar if self._is_arabic else person.father_name
-            elif col == 2:
-                return person.national_id or "-"
-            elif col == 3:
-                return person.nationality or "-"
-            elif col == 4:
-                return person.gender_display_ar if self._is_arabic else person.gender_display
-            elif col == 5:
-                return person.phone_number or person.mobile_number or "-"
-            elif col == 6:
-                return person.email or "-"
-        elif role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
-
-        return None
-
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            headers = self._headers_ar if self._is_arabic else self._headers_en
-            return headers[section] if section < len(headers) else ""
-        return None
+    def get_item_value(self, item, field_name: str):
+        """Extract field value from person object."""
+        if field_name == 'full_name':
+            return item.full_name_ar if self._is_arabic else item.full_name
+        elif field_name == 'father_name':
+            return item.father_name_ar if self._is_arabic else item.father_name
+        elif field_name == 'gender':
+            return item.gender_display_ar if self._is_arabic else item.gender_display
+        elif field_name == 'phone':
+            return item.phone_number or item.mobile_number or "-"
+        return getattr(item, field_name, None) or "-"
 
     def set_persons(self, persons: list):
-        self.beginResetModel()
-        self._persons = persons
-        self.endResetModel()
+        self.set_items(persons)
 
     def get_person(self, row: int):
-        if 0 <= row < len(self._persons):
-            return self._persons[row]
-        return None
-
-    def set_language(self, is_arabic: bool):
-        self._is_arabic = is_arabic
-        self.layoutChanged.emit()
+        return self.get_item(row)
 
 
 class PersonDialog(QDialog):
