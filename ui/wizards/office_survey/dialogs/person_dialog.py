@@ -23,6 +23,7 @@ from services.validation_service import ValidationService
 from services.person_api_service import PersonApiService
 from services.survey_api_service import SurveyApiService
 from ui.components.toast import Toast
+from ui.components.styled_message_box import StyledMessageBox
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -786,7 +787,6 @@ class PersonDialog(QDialog):
     def _on_final_save(self):
         """Handle final save (from relation tab) - create person via API, then link to unit, then accept."""
         import json
-        from PyQt5.QtWidgets import QMessageBox
 
         if self._use_api and not self.editing_mode:
             person_data = self.get_person_data()
@@ -803,10 +803,10 @@ class PersonDialog(QDialog):
             # Show person creation API response
             response_text = json.dumps(response, indent=2, ensure_ascii=False, default=str)
             print(f"\n[PERSON API RESPONSE]\n{response_text}")
-            QMessageBox.information(
+            StyledMessageBox.info(
                 self,
                 "Create Person API Response",
-                f"POST /api/v1/Surveys/{self._survey_id}/households/{self._household_id}/persons\n\n{response_text[:1000]}"
+                f"POST /api/v1/Surveys/{self._survey_id}/households/{self._household_id}/persons"
             )
 
             if not response.get("success"):
@@ -832,11 +832,10 @@ class PersonDialog(QDialog):
 
                 if not person_id:
                     logger.error(f"Could not find person ID in response. Available keys: {list(response['data'].keys())}")
-                    from PyQt5.QtWidgets import QMessageBox
-                    QMessageBox.critical(
+                    StyledMessageBox.error(
                         self,
                         "خطأ",
-                        f"تم إنشاء الشخص ولكن لم نتمكن من الحصول على معرف الشخص من الاستجابة"
+                        "تم إنشاء الشخص ولكن لم نتمكن من الحصول على معرف الشخص من الاستجابة"
                     )
                     return
 
@@ -862,10 +861,10 @@ class PersonDialog(QDialog):
                 # Show relation linking API response
                 relation_response_text = json.dumps(relation_response, indent=2, ensure_ascii=False, default=str)
                 print(f"\n[RELATION API RESPONSE]\n{relation_response_text}")
-                QMessageBox.information(
+                StyledMessageBox.info(
                     self,
                     "Link Person to Unit API Response",
-                    f"POST /api/v1/Surveys/{self._survey_id}/units/{self._unit_id}/relations\n\n{relation_response_text[:1000]}"
+                    f"POST /api/v1/Surveys/{self._survey_id}/units/{self._unit_id}/relations"
                 )
 
                 if not relation_response.get("success"):
@@ -902,7 +901,6 @@ class PersonDialog(QDialog):
     def _upload_identification_files(self, person_id: str):
         """Upload identification files for the created person."""
         import json
-        from PyQt5.QtWidgets import QMessageBox
 
         if not self.uploaded_files:
             return
@@ -927,10 +925,10 @@ class PersonDialog(QDialog):
             file_name = os.path.basename(file_path)
             response_text = json.dumps(response, indent=2, ensure_ascii=False, default=str)
             print(f"\n[IDENTIFICATION UPLOAD API RESPONSE]\n{response_text}")
-            QMessageBox.information(
+            StyledMessageBox.info(
                 self,
-                "Upload Identification Evidence API Response",
-                f"POST /api/v1/Surveys/{self._survey_id}/evidence/identification\n\nFile: {file_name}\nPersonId: {person_id}\n\n{response_text[:800]}"
+                "Upload Identification Evidence",
+                f"File: {file_name}\nPersonId: {person_id}"
             )
 
             if response.get("success"):
@@ -947,7 +945,6 @@ class PersonDialog(QDialog):
         """Upload tenure evidence files for the created relation."""
         import json
         import os
-        from PyQt5.QtWidgets import QMessageBox
 
         if not hasattr(self, 'relation_uploaded_files') or not self.relation_uploaded_files:
             return
@@ -977,10 +974,10 @@ class PersonDialog(QDialog):
             file_name = os.path.basename(file_path)
             response_text = json.dumps(response, indent=2, ensure_ascii=False, default=str)
             print(f"\n[TENURE UPLOAD API RESPONSE]\n{response_text}")
-            QMessageBox.information(
+            StyledMessageBox.info(
                 self,
-                "Upload Tenure Evidence API Response",
-                f"POST /api/v1/Surveys/{self._survey_id}/evidence/tenure\n\nFile: {file_name}\nRelationId: {relation_id}\n\n{response_text[:800]}"
+                "Upload Tenure Evidence",
+                f"File: {file_name}\nRelationId: {relation_id}"
             )
 
             if response.get("success"):

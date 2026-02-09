@@ -756,8 +756,13 @@ class UnitSelectionStep(BaseStep):
 
                 if not response.get("success"):
                     error_msg = response.get("error", "Unknown error")
+                    status_code = response.get("status_code", 0)
                     logger.error(f"Failed to link unit to survey: {error_msg}")
-                    result.add_error(f"فشل في ربط الوحدة بالمسح: {error_msg}")
+                    # 404 = unit not found on server
+                    if status_code == 404 or "404" in str(error_msg):
+                        result.add_error("يجب اختيار وحدة")
+                    else:
+                        result.add_error(f"فشل في ربط الوحدة بالمسح: {error_msg}")
                     return result
 
                 logger.info(f"Unit {unit_id} linked to survey {survey_id}")
