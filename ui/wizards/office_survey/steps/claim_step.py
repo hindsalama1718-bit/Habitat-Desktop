@@ -252,11 +252,13 @@ class ClaimStep(BaseStep):
         claim_person_search = QLineEdit()
         claim_person_search.setPlaceholderText("اسم الشخص")
         claim_person_search.setStyleSheet(StyleManager.form_input())
+        claim_person_search.setReadOnly(True)
         add_field("معرف المطالب", claim_person_search, 0, 0)
 
         claim_unit_search = QLineEdit()
         claim_unit_search.setPlaceholderText("رقم الوحدة")
         claim_unit_search.setStyleSheet(StyleManager.form_input())
+        claim_unit_search.setReadOnly(True)
         add_field("معرف الوحدة المطالب بها", claim_unit_search, 0, 1)
 
         claim_type_combo = QComboBox()
@@ -265,6 +267,7 @@ class ClaimStep(BaseStep):
         claim_type_combo.addItem("إشغال", "occupancy")
         claim_type_combo.addItem("إيجار", "tenancy")
         claim_type_combo.setStyleSheet(StyleManager.form_input())
+        claim_type_combo.setEnabled(False)
         add_field("نوع الحالة", claim_type_combo, 0, 2)
 
         claim_business_nature = QComboBox()
@@ -273,6 +276,7 @@ class ClaimStep(BaseStep):
         claim_business_nature.addItem("تجاري", "commercial")
         claim_business_nature.addItem("زراعي", "agricultural")
         claim_business_nature.setStyleSheet(StyleManager.form_input())
+        claim_business_nature.setEnabled(False)
         add_field("طبيعة الأعمال", claim_business_nature, 0, 3)
 
         # Row 2: حالة الحالة | المصدر | تاريخ المسح | الأولوية
@@ -283,6 +287,7 @@ class ClaimStep(BaseStep):
         claim_status_combo.addItem("مكتمل", "completed")
         claim_status_combo.addItem("معلق", "pending")
         claim_status_combo.setStyleSheet(StyleManager.form_input())
+        claim_status_combo.setEnabled(False)
         add_field("حالة الحالة", claim_status_combo, 1, 0)
 
         claim_source_combo = QComboBox()
@@ -291,13 +296,15 @@ class ClaimStep(BaseStep):
         claim_source_combo.addItem("طلب مباشر", "direct_request")
         claim_source_combo.addItem("إحالة", "referral")
         claim_source_combo.setStyleSheet(StyleManager.form_input())
+        claim_source_combo.setEnabled(False)
         add_field("المصدر", claim_source_combo, 1, 1)
 
         claim_survey_date = QDateEdit()
-        claim_survey_date.setCalendarPopup(True)
+        claim_survey_date.setCalendarPopup(False)
         claim_survey_date.setDisplayFormat("yyyy-MM-dd")
         claim_survey_date.setDate(QDate.currentDate())
         claim_survey_date.setStyleSheet(StyleManager.date_input())
+        claim_survey_date.setReadOnly(True)
         add_field("تاريخ المسح", claim_survey_date, 1, 2)
 
         claim_priority_combo = QComboBox()
@@ -308,6 +315,7 @@ class ClaimStep(BaseStep):
         claim_priority_combo.addItem("عاجل", "urgent")
         claim_priority_combo.setCurrentIndex(2)
         claim_priority_combo.setStyleSheet(StyleManager.form_input())
+        claim_priority_combo.setEnabled(False)
         add_field("الأولوية", claim_priority_combo, 1, 3)
 
         card_layout.addLayout(grid)
@@ -321,6 +329,7 @@ class ClaimStep(BaseStep):
 
         claim_notes = QTextEdit()
         claim_notes.setPlaceholderText("ملاحظات إضافية")
+        claim_notes.setReadOnly(True)
         claim_notes.setMinimumHeight(100)
         claim_notes.setMaximumHeight(120)
         claim_notes.setStyleSheet(f"""
@@ -346,8 +355,9 @@ class ClaimStep(BaseStep):
         card_layout.addWidget(next_date_label)
 
         claim_next_action_date = QDateEdit()
-        claim_next_action_date.setCalendarPopup(True)
+        claim_next_action_date.setCalendarPopup(False)
         claim_next_action_date.setDisplayFormat("yyyy-MM-dd")
+        claim_next_action_date.setReadOnly(True)
         claim_next_action_date.setStyleSheet(StyleManager.date_input())
         card_layout.addWidget(claim_next_action_date)
         card_layout.addSpacing(8)
