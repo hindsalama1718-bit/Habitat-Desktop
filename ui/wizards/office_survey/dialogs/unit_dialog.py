@@ -192,6 +192,7 @@ class UnitDialog(QDialog):
         # Area - with numeric validator and inline error
         self.area_input = QLineEdit()
         self.area_input.setPlaceholderText("المساحة التقريبية أو المقاسة (م²)")
+        self.area_input.setAlignment(Qt.AlignRight)
         self.area_input.setStyleSheet(self._input_style())
 
         # Allow only numbers (with decimal point)
@@ -211,12 +212,12 @@ class UnitDialog(QDialog):
 
         # Description - DRY
         self.description_edit = QTextEdit()
-       # self.description_edit.setLayoutDirection(Qt.RightToLeft)
+        self.description_edit.setAlignment(Qt.AlignRight)
         self.description_edit.setMinimumHeight(120)
         self.description_edit.setMaximumHeight(120)
-        self.description_edit.setPlaceholderText(
-            "وصف تفصيلي يشمل: عدد الغرف وأنواعها، المساحة التقريبية، الاتجاهات والحدود، وأي ميزات مميزة."
-        )
+       # self.description_edit.setPlaceholderText(
+       #     "وصف تفصيلي يشمل: عدد الغرف وأنواعها، المساحة التقريبية، الاتجاهات والحدود، وأي ميزات مميزة."
+       # )
         self.description_edit.setStyleSheet("""
             QTextEdit {
                 padding: 8px 12px;

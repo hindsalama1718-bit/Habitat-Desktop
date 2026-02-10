@@ -393,7 +393,7 @@ class HouseholdStep(BaseStep):
         notes_field_layout.addWidget(notes_label)
 
         self.hh_notes = QTextEdit()
-        self.hh_notes.setPlaceholderText("أدخل ملاحظاتك هنا...")
+        #self.hh_notes.setPlaceholderText("أدخل ملاحظاتك هنا...")
         self.hh_notes.setMaximumHeight(80)
         self.hh_notes.setAlignment(Qt.AlignRight | Qt.AlignTop)  # Align placeholder to right
         self.hh_notes.setStyleSheet("""

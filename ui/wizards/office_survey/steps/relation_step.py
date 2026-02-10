@@ -301,12 +301,22 @@ class RelationStep(BaseStep):
         grid.addWidget(relation_type, 1, 1)
 
         start_date = QDateEdit()
-        start_date.setCalendarPopup(False)
         start_date.setDate(QDate.currentDate())
         start_date.setDisplayFormat("yyyy-MM-dd")
-        start_date.setStyleSheet(StyleManager.date_input())
         start_date.setReadOnly(True)
-        grid.addWidget(start_date, 1, 2)
+        start_date.setCalendarPopup(False)
+        start_date.setButtonSymbols(QDateEdit.NoButtons)
+        start_date.setStyleSheet("""
+            QDateEdit {
+                background: transparent;
+                border: none;
+                font-size: 14px;
+                color: #333;
+                min-height: 23px;
+            }
+        """)
+        start_date_wrapper = self._create_readonly_date_wrapper(start_date)
+        grid.addWidget(start_date_wrapper, 1, 2)
 
         # Row 2 - Labels
         grid.addWidget(self._create_label("حصة الملكية", label_style), 2, 0)
@@ -428,6 +438,37 @@ class RelationStep(BaseStep):
         label = QLabel(text)
         label.setStyleSheet(style)
         return label
+
+    def _create_readonly_date_wrapper(self, date_edit) -> QFrame:
+        """Wrap a read-only QDateEdit in a styled container with calendar icon."""
+        from ui.components.icon import Icon
+
+        container = QFrame()
+        container.setStyleSheet("""
+            QFrame {
+                background-color: #F8FAFC;
+                border: 1px solid #E0E6ED;
+                border-radius: 8px;
+                min-height: 23px;
+                max-height: 43px;
+            }
+        """)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(10, 4, 10, 4)
+        layout.setSpacing(8)
+
+        icon_label = QLabel()
+        icon_label.setFixedSize(20, 20)
+        icon_label.setAlignment(Qt.AlignCenter)
+        icon_label.setStyleSheet("border: none; background: transparent;")
+        cal_pixmap = Icon.load_pixmap("calender", size=16)
+        if cal_pixmap and not cal_pixmap.isNull():
+            icon_label.setPixmap(cal_pixmap)
+
+        layout.addWidget(icon_label)
+        layout.addWidget(date_edit)
+
+        return container
 
     def _collect_relations_from_cards(self) -> List[Dict[str, Any]]:
         """Collect relation data from all person cards."""
