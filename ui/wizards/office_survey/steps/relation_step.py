@@ -14,8 +14,8 @@ from datetime import datetime
 
 from PyQt5.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QDateEdit,
-    QDoubleSpinBox, QLineEdit, QTextEdit, QFrame, QGridLayout, QButtonGroup,
-    QRadioButton, QFileDialog, QScrollArea, QWidget
+    QDoubleSpinBox, QLineEdit, QTextEdit, QFrame, QGridLayout,
+    QScrollArea, QWidget
 )
 from PyQt5.QtCore import Qt, QDate
 
@@ -276,10 +276,11 @@ class RelationStep(BaseStep):
         grid.addWidget(self._create_label("نوع العلاقة", label_style), 0, 1)
         grid.addWidget(self._create_label("تاريخ بدء العلاقة", label_style), 0, 2)
 
-        # Row 1 - Inputs - Using StyleManager for consistent styling
+        # Row 1 - Inputs - Read-only display fields
         contract_type = QComboBox()
         contract_type.addItems(["اختر", "عقد إيجار", "عقد بيع", "عقد شراكة"])
         contract_type.setStyleSheet(StyleManager.form_input())
+        contract_type.setEnabled(False)
         grid.addWidget(contract_type, 1, 0)
 
         relation_type = QComboBox()
@@ -296,32 +297,47 @@ class RelationStep(BaseStep):
         for code, ar in rel_types:
             relation_type.addItem(ar, code)
         relation_type.setStyleSheet(StyleManager.form_input())
+        relation_type.setEnabled(False)
         grid.addWidget(relation_type, 1, 1)
 
         start_date = QDateEdit()
-        start_date.setCalendarPopup(True)
         start_date.setDate(QDate.currentDate())
         start_date.setDisplayFormat("yyyy-MM-dd")
-        start_date.setStyleSheet(StyleManager.date_input())
-        grid.addWidget(start_date, 1, 2)
+        start_date.setReadOnly(True)
+        start_date.setCalendarPopup(False)
+        start_date.setButtonSymbols(QDateEdit.NoButtons)
+        start_date.setStyleSheet("""
+            QDateEdit {
+                background: transparent;
+                border: none;
+                font-size: 14px;
+                color: #333;
+                min-height: 23px;
+            }
+        """)
+        start_date_wrapper = self._create_readonly_date_wrapper(start_date)
+        grid.addWidget(start_date_wrapper, 1, 2)
 
         # Row 2 - Labels
         grid.addWidget(self._create_label("حصة الملكية", label_style), 2, 0)
         grid.addWidget(self._create_label("نوع الدليل", label_style), 2, 1)
         grid.addWidget(self._create_label("وصف الدليل", label_style), 2, 2)
 
-        # Row 2 - Inputs - Using StyleManager for consistent styling
+        # Row 2 - Inputs - Read-only display fields
         ownership_share = QLineEdit("0")
         ownership_share.setStyleSheet(StyleManager.form_input())
+        ownership_share.setReadOnly(True)
         grid.addWidget(ownership_share, 3, 0)
 
         evidence_type = QComboBox()
         evidence_type.addItems(["اختر", "صك", "عقد", "وكالة", "إقرار"])
         evidence_type.setStyleSheet(StyleManager.form_input())
+        evidence_type.setEnabled(False)
         grid.addWidget(evidence_type, 3, 1)
 
         evidence_desc = QLineEdit("-")
         evidence_desc.setStyleSheet(StyleManager.form_input())
+        evidence_desc.setReadOnly(True)
         grid.addWidget(evidence_desc, 3, 2)
 
         card_layout.addLayout(grid)
@@ -369,6 +385,7 @@ class RelationStep(BaseStep):
 
         notes = QTextEdit("-")
         notes.setMaximumHeight(70)
+        notes.setReadOnly(True)
         notes.setStyleSheet("""
             QTextEdit {
                 border: 1px solid #dfe6e9;
@@ -385,49 +402,24 @@ class RelationStep(BaseStep):
 
         card_layout.addWidget(notes)
 
-        # Documents section
+        # Documents section (read-only indicator)
         docs_label = self._create_label("صور المستندات", label_style)
         card_layout.addWidget(docs_label)
 
-        radio_layout = QHBoxLayout()
-        rb_has = QRadioButton("يوجد مستندات")
-        rb_none = QRadioButton("لا يوجد مستندات")
-        rb_has.setChecked(True)
-
-        radio_layout.addWidget(rb_has)
-        radio_layout.addWidget(rb_none)
-        radio_layout.addStretch()
-        card_layout.addLayout(radio_layout)
-
-        # Upload box - Using StyleManager for consistent styling
-        upload_box = QFrame()
-        upload_box.setCursor(Qt.PointingHandCursor)
-        upload_box.setStyleSheet(StyleManager.file_upload_frame())
-
-        upload_layout = QVBoxLayout(upload_box)
-        upload_layout.setContentsMargins(20, 15, 20, 15)
-        upload_layout.setAlignment(Qt.AlignCenter)
-        upload_layout.setSpacing(5)
-
-        # Upload icon
-        from ui.components.icon import Icon
-        upload_icon = QLabel()
-        upload_icon.setAlignment(Qt.AlignCenter)
-        upload_icon.setStyleSheet("border: none;")
-        upload_pixmap = Icon.load_pixmap("upload_file", size=24)
-        if upload_pixmap and not upload_pixmap.isNull():
-            upload_icon.setPixmap(upload_pixmap)
-        else:
-            upload_icon.setText("📁")
-            upload_icon.setStyleSheet("border: none; font-size: 20px;")
-        upload_layout.addWidget(upload_icon)
-
-        # Upload button
-        upload_btn = QPushButton("ارفع صور المستندات")
-        upload_btn.setStyleSheet(StyleManager.file_upload_button())
-        upload_layout.addWidget(upload_btn)
-
-        card_layout.addWidget(upload_box)
+        # Show read-only document status
+        has_evidence = bool(relation_data.get('evidence_type'))
+        doc_status = QLabel("يوجد مستندات" if has_evidence else "لا يوجد مستندات")
+        doc_status.setStyleSheet("""
+            QLabel {
+                border: 1px solid #dfe6e9;
+                border-radius: 4px;
+                padding: 8px;
+                background-color: #ffffff;
+                color: #2d3436;
+                font-size: 12px;
+            }
+        """)
+        card_layout.addWidget(doc_status)
 
         # Store references to widgets for data retrieval
         card.person_data = person
@@ -446,6 +438,37 @@ class RelationStep(BaseStep):
         label = QLabel(text)
         label.setStyleSheet(style)
         return label
+
+    def _create_readonly_date_wrapper(self, date_edit) -> QFrame:
+        """Wrap a read-only QDateEdit in a styled container with calendar icon."""
+        from ui.components.icon import Icon
+
+        container = QFrame()
+        container.setStyleSheet("""
+            QFrame {
+                background-color: #F8FAFC;
+                border: 1px solid #E0E6ED;
+                border-radius: 8px;
+                min-height: 23px;
+                max-height: 43px;
+            }
+        """)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(10, 4, 10, 4)
+        layout.setSpacing(8)
+
+        icon_label = QLabel()
+        icon_label.setFixedSize(20, 20)
+        icon_label.setAlignment(Qt.AlignCenter)
+        icon_label.setStyleSheet("border: none; background: transparent;")
+        cal_pixmap = Icon.load_pixmap("calender", size=16)
+        if cal_pixmap and not cal_pixmap.isNull():
+            icon_label.setPixmap(cal_pixmap)
+
+        layout.addWidget(icon_label)
+        layout.addWidget(date_edit)
+
+        return container
 
     def _collect_relations_from_cards(self) -> List[Dict[str, Any]]:
         """Collect relation data from all person cards."""

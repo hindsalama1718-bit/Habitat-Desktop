@@ -15,12 +15,13 @@ from abc import ABCMeta, abstractmethod
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QFrame, QStackedWidget, QMessageBox, QProgressBar
+    QFrame, QStackedWidget, QProgressBar
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont
 
 from .base_step import BaseStep, StepValidationResult
+from ui.components.styled_message_box import StyledMessageBox
 from .wizard_context import WizardContext
 from .step_navigator import StepNavigator
 from ui.components.action_button import ActionButton
@@ -299,7 +300,7 @@ class BaseWizard(QWidget, metaclass=ABCQWidgetMeta):
         draft_id = self.on_save_draft()
         if draft_id:
             self.draft_saved.emit(draft_id)
-            QMessageBox.information(
+            StyledMessageBox.success(
                 self,
                 "تم الحفظ",
                 f"تم حفظ المسودة بنجاح\nمعرف المسودة: {draft_id}"
@@ -363,11 +364,11 @@ class BaseWizard(QWidget, metaclass=ABCQWidgetMeta):
 
         message = ""
         if errors:
-            message += f"الأخطاء:\n{errors}\n"
+            message += f"{errors}"
         if warnings:
-            message += f"\nتحذيرات:\n{warnings}"
+            message += f"\n{warnings}"
 
-        QMessageBox.warning(
+        StyledMessageBox.warning(
             self,
             "خطأ في التحقق من البيانات",
             message or "يرجى التحقق من البيانات المدخلة"

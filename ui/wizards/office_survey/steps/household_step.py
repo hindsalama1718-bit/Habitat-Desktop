@@ -13,11 +13,11 @@ import uuid
 
 from PyQt5.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QFrame, QScrollArea, QWidget, QMessageBox, QGroupBox,
+    QFrame, QScrollArea, QWidget, QGroupBox,
     QSpinBox, QTextEdit, QGridLayout, QGraphicsDropShadowEffect
 )
-from PyQt5.QtCore import Qt, QLocale
-from PyQt5.QtGui import QColor
+from PyQt5.QtCore import Qt, QLocale, QRegExp
+from PyQt5.QtGui import QColor, QRegExpValidator
 
 from ui.wizards.framework import BaseStep, StepValidationResult
 from ui.wizards.office_survey.survey_context import SurveyContext
@@ -211,7 +211,7 @@ class HouseholdStep(BaseStep):
         # معلومات الاسرة (Family Information) Section - same design as units card
         family_info_frame = QFrame()
         family_info_frame.setObjectName("familyInfoCard")
-        family_info_frame.setFixedHeight(278)  # Height as requested
+        family_info_frame.setFixedHeight(298)  # Height increased for validation labels
         family_info_frame.setStyleSheet("""
             QFrame#familyInfoCard {
                 background-color: white;
@@ -325,6 +325,9 @@ class HouseholdStep(BaseStep):
         self.hh_head_name = QLineEdit()
         self.hh_head_name.setPlaceholderText("اسم الشخص")
         self.hh_head_name.setFixedHeight(45)  # Figma: 45px exact height
+        # Allow only Arabic/Latin letters and spaces (no numbers)
+        letters_only = QRegExpValidator(QRegExp("[\u0600-\u06FFa-zA-Z\\s]+"))
+        self.hh_head_name.setValidator(letters_only)
         self.hh_head_name.setStyleSheet("""
             QLineEdit {
                 padding: 0px 12px;
@@ -339,7 +342,12 @@ class HouseholdStep(BaseStep):
                 border-width: 2px;
             }
         """)
+        self.hh_head_name_error = QLabel("")
+        self.hh_head_name_error.setFixedHeight(16)
+        self.hh_head_name_error.setStyleSheet("color: #e74c3c; font-size: 11px; background: transparent; border: none;")
+        self.hh_head_name.textChanged.connect(lambda: self.hh_head_name_error.setText(""))
         field1_layout.addWidget(self.hh_head_name)
+        field1_layout.addWidget(self.hh_head_name_error)
         row2_layout.addLayout(field1_layout, 1)
 
         # Field 2: عدد الأفراد with custom arrows (LEFT in RTL) - SWAPPED
@@ -362,7 +370,12 @@ class HouseholdStep(BaseStep):
         # Create container with arrows (same as unit_dialog)
         members_widget = self._create_spinbox_with_arrows(self.hh_total_members)
 
+        self.hh_total_members_error = QLabel("")
+        self.hh_total_members_error.setFixedHeight(16)
+        self.hh_total_members_error.setStyleSheet("color: #e74c3c; font-size: 11px; background: transparent; border: none;")
+        self.hh_total_members.valueChanged.connect(lambda: self.hh_total_members_error.setText(""))
         field2_layout.addWidget(members_widget)
+        field2_layout.addWidget(self.hh_total_members_error)
         row2_layout.addLayout(field2_layout, 1)
 
         family_info_layout.addLayout(row2_layout)
@@ -380,7 +393,7 @@ class HouseholdStep(BaseStep):
         notes_field_layout.addWidget(notes_label)
 
         self.hh_notes = QTextEdit()
-        self.hh_notes.setPlaceholderText("أدخل ملاحظاتك هنا...")
+        #self.hh_notes.setPlaceholderText("أدخل ملاحظاتك هنا...")
         self.hh_notes.setMaximumHeight(80)
         self.hh_notes.setAlignment(Qt.AlignRight | Qt.AlignTop)  # Align placeholder to right
         self.hh_notes.setStyleSheet("""
@@ -744,68 +757,83 @@ class HouseholdStep(BaseStep):
         """Validate the step and save household data automatically."""
         result = self.create_validation_result()
 
+        # Clear inline errors
+        self.hh_head_name_error.setText("")
+        self.hh_total_members_error.setText("")
+
+        # Validate required fields
+        has_error = False
+        head_name = self.hh_head_name.text().strip()
+
+        if not head_name:
+            self.hh_head_name_error.setText("اسم رب الأسرة مطلوب")
+            has_error = True
+
+        if self.hh_total_members.value() == 0:
+            self.hh_total_members_error.setText("عدد أفراد الأسرة مطلوب")
+            has_error = True
+
+        if has_error:
+            result.add_error("يرجى تعبئة الحقول المطلوبة")
+            return result
+
         # Auto-save household data when clicking "Next"
-        if self.hh_head_name.text().strip():
-            # Get the property unit ID from context
-            # This should be set from step 2 (unit selection)
-            property_unit_id = None
-            if self.context.unit:
-                property_unit_id = getattr(self.context.unit, 'unit_uuid', None)
-            elif self.context.new_unit_data:
-                property_unit_id = self.context.new_unit_data.get('unit_uuid')
+        # Get the property unit ID from context
+        # This should be set from step 2 (unit selection)
+        property_unit_id = None
+        if self.context.unit:
+            property_unit_id = getattr(self.context.unit, 'unit_uuid', None)
+        elif self.context.new_unit_data:
+            property_unit_id = self.context.new_unit_data.get('unit_uuid')
 
-            # Build household data
-            household = {
-                "household_id": str(uuid.uuid4()),
-                "property_unit_id": property_unit_id,
-                "unit_uuid": property_unit_id,  # Alias for API
-                "head_name": self.hh_head_name.text().strip(),
-                "size": self.hh_total_members.value(),
-                "adult_males": self.hh_adult_males.value(),
-                "adult_females": self.hh_adult_females.value(),
-                "male_children_under18": self.hh_male_children_under18.value(),
-                "female_children_under18": self.hh_female_children_under18.value(),
-                "male_elderly_over65": self.hh_male_elderly_over65.value(),
-                "female_elderly_over65": self.hh_female_elderly_over65.value(),
-                "disabled_males": self.hh_disabled_males.value(),
-                "disabled_females": self.hh_disabled_females.value(),
-                "notes": self.hh_notes.toPlainText().strip()
-            }
+        # Build household data
+        household = {
+            "household_id": str(uuid.uuid4()),
+            "property_unit_id": property_unit_id,
+            "unit_uuid": property_unit_id,  # Alias for API
+            "head_name": head_name,
+            "size": self.hh_total_members.value(),
+            "adult_males": self.hh_adult_males.value(),
+            "adult_females": self.hh_adult_females.value(),
+            "male_children_under18": self.hh_male_children_under18.value(),
+            "female_children_under18": self.hh_female_children_under18.value(),
+            "male_elderly_over65": self.hh_male_elderly_over65.value(),
+            "female_elderly_over65": self.hh_female_elderly_over65.value(),
+            "disabled_males": self.hh_disabled_males.value(),
+            "disabled_females": self.hh_disabled_females.value(),
+            "notes": self.hh_notes.toPlainText().strip()
+        }
 
-            # Save via API if using API mode
-            if self._use_api:
-                # Set auth token before API call
-                self._set_auth_token()
+        # Save via API if using API mode
+        if self._use_api:
+            # Set auth token before API call
+            self._set_auth_token()
 
-                # Get survey_id from context (set in step 1)
-                survey_id = self.context.get_data("survey_id")
+            # Get survey_id from context (set in step 1)
+            survey_id = self.context.get_data("survey_id")
 
-                logger.info(f"Creating household via API: {household}")
-                print(f"[HOUSEHOLD] Creating household for survey_id: {survey_id}")
-                response = self._api_service.create_household(household, survey_id=survey_id)
+            logger.info(f"Creating household via API: {household}")
+            print(f"[HOUSEHOLD] Creating household for survey_id: {survey_id}")
+            response = self._api_service.create_household(household, survey_id=survey_id)
 
-                if not response.get("success"):
-                    error_msg = response.get("error", "Unknown error")
-                    logger.error(f"Failed to create household via API: {error_msg}")
-                    result.add_error(f"فشل في حفظ بيانات الأسرة: {error_msg}")
-                    return result
+            if not response.get("success"):
+                error_msg = response.get("error", "Unknown error")
+                logger.error(f"Failed to create household via API: {error_msg}")
+                result.add_error("فشل في حفظ بيانات الأسرة")
+                return result
 
-                logger.info("Household created successfully via API")
-                # Store the API response data
-                if response.get("data"):
-                    household_id = response["data"].get("id") or response["data"].get("householdId", "")
-                    household["api_id"] = household_id
-                    self.context.update_data("household_id", household_id)
-                    print(f"[HOUSEHOLD] Household created successfully, household_id: {household_id}")
-                    print(f"[HOUSEHOLD] Full API response: {response['data']}")
+            logger.info("Household created successfully via API")
+            # Store the API response data
+            if response.get("data"):
+                household_id = response["data"].get("id") or response["data"].get("householdId", "")
+                household["api_id"] = household_id
+                self.context.update_data("household_id", household_id)
+                print(f"[HOUSEHOLD] Household created successfully, household_id: {household_id}")
+                print(f"[HOUSEHOLD] Full API response: {response['data']}")
 
-            # Clear old household data and add new one
-            self.context.households.clear()
-            self.context.households.append(household)
-
-        # Validate that household data exists
-        if len(self.context.households) == 0:
-            result.add_error("يجب إدخال بيانات الأسرة")
+        # Clear old household data and add new one
+        self.context.households.clear()
+        self.context.households.append(household)
 
         return result
 

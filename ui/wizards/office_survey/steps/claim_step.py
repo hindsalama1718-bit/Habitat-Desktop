@@ -251,12 +251,16 @@ class ClaimStep(BaseStep):
         # Row 1: معرف المطالب | معرف الوحدة المطالب بها | نوع الحالة | طبيعة الأعمال
         claim_person_search = QLineEdit()
         claim_person_search.setPlaceholderText("اسم الشخص")
+        claim_person_search.setAlignment(Qt.AlignRight)
         claim_person_search.setStyleSheet(StyleManager.form_input())
+        claim_person_search.setReadOnly(True)
         add_field("معرف المطالب", claim_person_search, 0, 0)
 
         claim_unit_search = QLineEdit()
         claim_unit_search.setPlaceholderText("رقم الوحدة")
+        claim_unit_search.setAlignment(Qt.AlignRight)
         claim_unit_search.setStyleSheet(StyleManager.form_input())
+        claim_unit_search.setReadOnly(True)
         add_field("معرف الوحدة المطالب بها", claim_unit_search, 0, 1)
 
         claim_type_combo = QComboBox()
@@ -265,6 +269,7 @@ class ClaimStep(BaseStep):
         claim_type_combo.addItem("إشغال", "occupancy")
         claim_type_combo.addItem("إيجار", "tenancy")
         claim_type_combo.setStyleSheet(StyleManager.form_input())
+        claim_type_combo.setEnabled(False)
         add_field("نوع الحالة", claim_type_combo, 0, 2)
 
         claim_business_nature = QComboBox()
@@ -273,6 +278,7 @@ class ClaimStep(BaseStep):
         claim_business_nature.addItem("تجاري", "commercial")
         claim_business_nature.addItem("زراعي", "agricultural")
         claim_business_nature.setStyleSheet(StyleManager.form_input())
+        claim_business_nature.setEnabled(False)
         add_field("طبيعة الأعمال", claim_business_nature, 0, 3)
 
         # Row 2: حالة الحالة | المصدر | تاريخ المسح | الأولوية
@@ -283,6 +289,7 @@ class ClaimStep(BaseStep):
         claim_status_combo.addItem("مكتمل", "completed")
         claim_status_combo.addItem("معلق", "pending")
         claim_status_combo.setStyleSheet(StyleManager.form_input())
+        claim_status_combo.setEnabled(False)
         add_field("حالة الحالة", claim_status_combo, 1, 0)
 
         claim_source_combo = QComboBox()
@@ -291,14 +298,26 @@ class ClaimStep(BaseStep):
         claim_source_combo.addItem("طلب مباشر", "direct_request")
         claim_source_combo.addItem("إحالة", "referral")
         claim_source_combo.setStyleSheet(StyleManager.form_input())
+        claim_source_combo.setEnabled(False)
         add_field("المصدر", claim_source_combo, 1, 1)
 
         claim_survey_date = QDateEdit()
-        claim_survey_date.setCalendarPopup(True)
         claim_survey_date.setDisplayFormat("yyyy-MM-dd")
         claim_survey_date.setDate(QDate.currentDate())
-        claim_survey_date.setStyleSheet(StyleManager.date_input())
-        add_field("تاريخ المسح", claim_survey_date, 1, 2)
+        claim_survey_date.setReadOnly(True)
+        claim_survey_date.setCalendarPopup(False)
+        claim_survey_date.setButtonSymbols(QDateEdit.NoButtons)
+        claim_survey_date.setStyleSheet("""
+            QDateEdit {
+                background: transparent;
+                border: none;
+                font-size: 14px;
+                color: #333;
+                min-height: 23px;
+            }
+        """)
+        survey_date_wrapper = self._create_readonly_date_wrapper(claim_survey_date)
+        add_field("تاريخ المسح", survey_date_wrapper, 1, 2)
 
         claim_priority_combo = QComboBox()
         claim_priority_combo.addItem("اختر", "")
@@ -308,6 +327,7 @@ class ClaimStep(BaseStep):
         claim_priority_combo.addItem("عاجل", "urgent")
         claim_priority_combo.setCurrentIndex(2)
         claim_priority_combo.setStyleSheet(StyleManager.form_input())
+        claim_priority_combo.setEnabled(False)
         add_field("الأولوية", claim_priority_combo, 1, 3)
 
         card_layout.addLayout(grid)
@@ -320,7 +340,9 @@ class ClaimStep(BaseStep):
         card_layout.addWidget(notes_label)
 
         claim_notes = QTextEdit()
-        claim_notes.setPlaceholderText("ملاحظات إضافية")
+      #  claim_notes.setPlaceholderText("ملاحظات إضافية")
+        claim_notes.setAlignment(Qt.AlignRight)
+        claim_notes.setReadOnly(True)
         claim_notes.setMinimumHeight(100)
         claim_notes.setMaximumHeight(120)
         claim_notes.setStyleSheet(f"""
@@ -346,10 +368,21 @@ class ClaimStep(BaseStep):
         card_layout.addWidget(next_date_label)
 
         claim_next_action_date = QDateEdit()
-        claim_next_action_date.setCalendarPopup(True)
         claim_next_action_date.setDisplayFormat("yyyy-MM-dd")
-        claim_next_action_date.setStyleSheet(StyleManager.date_input())
-        card_layout.addWidget(claim_next_action_date)
+        claim_next_action_date.setReadOnly(True)
+        claim_next_action_date.setCalendarPopup(False)
+        claim_next_action_date.setButtonSymbols(QDateEdit.NoButtons)
+        claim_next_action_date.setStyleSheet("""
+            QDateEdit {
+                background: transparent;
+                border: none;
+                font-size: 14px;
+                color: #333;
+                min-height: 23px;
+            }
+        """)
+        next_date_wrapper = self._create_readonly_date_wrapper(claim_next_action_date)
+        card_layout.addWidget(next_date_wrapper)
         card_layout.addSpacing(8)
 
         # Status Bar - Evidence available indicator
@@ -384,6 +417,37 @@ class ClaimStep(BaseStep):
             self._populate_card_with_data(card, claim_data)
 
         return card
+
+    def _create_readonly_date_wrapper(self, date_edit) -> QFrame:
+        """Wrap a read-only QDateEdit in a styled container with calendar icon."""
+        from ui.components.icon import Icon
+
+        container = QFrame()
+        container.setStyleSheet("""
+            QFrame {
+                background-color: #F8FAFC;
+                border: 1px solid #E0E6ED;
+                border-radius: 8px;
+                min-height: 23px;
+                max-height: 43px;
+            }
+        """)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(10, 4, 10, 4)
+        layout.setSpacing(8)
+
+        icon_label = QLabel()
+        icon_label.setFixedSize(20, 20)
+        icon_label.setAlignment(Qt.AlignCenter)
+        icon_label.setStyleSheet("border: none; background: transparent;")
+        cal_pixmap = Icon.load_pixmap("calender", size=16)
+        if cal_pixmap and not cal_pixmap.isNull():
+            icon_label.setPixmap(cal_pixmap)
+
+        layout.addWidget(icon_label)
+        layout.addWidget(date_edit)
+
+        return container
 
     def _populate_card_with_data(self, card: QFrame, claim_data: Dict[str, Any]):
         """Populate a claim card with data from API response."""
