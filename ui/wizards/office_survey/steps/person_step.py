@@ -365,12 +365,10 @@ class PersonStep(BaseStep):
     def _view_person(self, person_id: str):
         """Show dialog to view/edit person data - exact copy from old wizard."""
         person_data = None
-        person_index = None
 
-        for i, person in enumerate(self.context.persons):
+        for person in self.context.persons:
             if person['person_id'] == person_id:
                 person_data = person
-                person_index = i
                 break
 
         if person_data:
@@ -397,15 +395,10 @@ class PersonStep(BaseStep):
                 auth_token=auth_token,
                 survey_id=survey_id,
                 household_id=household_id,
-                unit_id=unit_id
+                unit_id=unit_id,
+                view_only=True
             )
-
-            if dialog.exec_() == QDialog.Accepted:
-                updated_data = dialog.get_person_data()
-                updated_data['person_id'] = person_id  # Keep the same ID
-                self.context.persons[person_index] = updated_data
-                self._refresh_persons_list()
-                logger.info(f"Person updated: {updated_data['first_name']} {updated_data['last_name']}")
+            dialog.exec_()
 
     def _delete_person_by_id(self, person_id: str):
         """Delete person by ID with confirmation - exact copy from old wizard."""

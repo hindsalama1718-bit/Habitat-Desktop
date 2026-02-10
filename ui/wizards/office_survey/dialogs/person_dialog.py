@@ -34,7 +34,8 @@ class PersonDialog(QDialog):
 
     def __init__(self, person_data: Optional[Dict] = None, existing_persons: List[Dict] = None, parent=None,
                  auth_token: Optional[str] = None, survey_id: Optional[str] = None,
-                 household_id: Optional[str] = None, unit_id: Optional[str] = None):
+                 household_id: Optional[str] = None, unit_id: Optional[str] = None,
+                 view_only: bool = False):
         """
         Initialize the dialog.
 
@@ -46,13 +47,16 @@ class PersonDialog(QDialog):
             survey_id: Survey UUID for creating persons under a survey
             household_id: Household UUID for creating persons under a household
             unit_id: Property Unit UUID for linking person to unit relation
+            view_only: If True, show all data as read-only with OK button only
         """
         super().__init__(parent)
         self.person_data = person_data
         self.existing_persons = existing_persons or []
         self.editing_mode = person_data is not None
+        self.view_only = view_only
         self.validation_service = ValidationService()
         self.uploaded_files = []  # Store uploaded file paths
+        self.relation_uploaded_files = []  # Store relation uploaded file paths
 
         # API integration
         self._survey_id = survey_id
@@ -79,6 +83,9 @@ class PersonDialog(QDialog):
 
         if self.editing_mode and person_data:
             self._load_person_data(person_data)
+
+        if self.view_only:
+            self._apply_view_only_mode()
 
     def _setup_ui(self):
         """Setup dialog UI."""
@@ -311,40 +318,40 @@ class PersonDialog(QDialog):
 
         row += 1
         # File upload frame - using StyleManager
-        upload_frame = QFrame()
-        upload_frame.setObjectName("UploadFrame")
-        upload_frame.setCursor(Qt.PointingHandCursor)
-        upload_frame.setStyleSheet(StyleManager.file_upload_frame())
+        self.upload_frame = QFrame()
+        self.upload_frame.setObjectName("UploadFrame")
+        self.upload_frame.setCursor(Qt.PointingHandCursor)
+        self.upload_frame.setStyleSheet(StyleManager.file_upload_frame())
 
-        upload_layout = QVBoxLayout(upload_frame)
+        upload_layout = QVBoxLayout(self.upload_frame)
         upload_layout.setContentsMargins(20, 15, 20, 15)
         upload_layout.setAlignment(Qt.AlignCenter)
         upload_layout.setSpacing(5)
 
         # Upload icon - smaller and centered
-        upload_icon = QLabel()
-        upload_icon.setAlignment(Qt.AlignCenter)
-        upload_icon.setStyleSheet("border: none;")
+        self.upload_icon = QLabel()
+        self.upload_icon.setAlignment(Qt.AlignCenter)
+        self.upload_icon.setStyleSheet("border: none;")
 
         # Load upload icon using Icon component
         from ui.components.icon import Icon
         upload_pixmap = Icon.load_pixmap("upload_file", size=24)
         if upload_pixmap and not upload_pixmap.isNull():
-            upload_icon.setPixmap(upload_pixmap)
+            self.upload_icon.setPixmap(upload_pixmap)
         else:
             # Fallback emoji
-            upload_icon.setText("📁")
-            upload_icon.setStyleSheet("border: none; font-size: 20px;")
+            self.upload_icon.setText("📁")
+            self.upload_icon.setStyleSheet("border: none; font-size: 20px;")
 
         # Upload button - using StyleManager
         self.doc_upload_btn = QPushButton("ارفع صور المستندات")
         self.doc_upload_btn.setStyleSheet(StyleManager.file_upload_button())
         self.doc_upload_btn.clicked.connect(self._browse_files)
 
-        upload_layout.addWidget(upload_icon)
+        upload_layout.addWidget(self.upload_icon)
         upload_layout.addWidget(self.doc_upload_btn)
 
-        person_grid.addWidget(upload_frame, row, 0, 1, 2)
+        person_grid.addWidget(self.upload_frame, row, 0, 1, 2)
 
         person_layout.addLayout(person_grid)
 
@@ -359,8 +366,8 @@ class PersonDialog(QDialog):
         buttons_layout.setSpacing(15)
 
         # Cancel button (on the right in RTL)
-        cancel_person_btn = QPushButton("إلغاء")
-        cancel_person_btn.setStyleSheet("""
+        self.cancel_person_btn = QPushButton("إلغاء")
+        self.cancel_person_btn.setStyleSheet("""
             QPushButton {
                 background-color: white;
                 color: #4a90e2;
@@ -375,11 +382,11 @@ class PersonDialog(QDialog):
                 background-color: #f5f7fa;
             }
         """)
-        cancel_person_btn.clicked.connect(self.reject)
+        self.cancel_person_btn.clicked.connect(self.reject)
 
         # Save person button (on the left in RTL)
-        save_person_btn = QPushButton("حفظ")
-        save_person_btn.setStyleSheet("""
+        self.save_person_btn = QPushButton("حفظ")
+        self.save_person_btn.setStyleSheet("""
             QPushButton {
                 background-color: #4a90e2;
                 color: white;
@@ -393,11 +400,11 @@ class PersonDialog(QDialog):
                 background-color: #357ABD;
             }
         """)
-        save_person_btn.clicked.connect(self._save_person_and_switch_tab)
+        self.save_person_btn.clicked.connect(self._save_person_and_switch_tab)
 
         buttons_layout.addStretch()
-        buttons_layout.addWidget(cancel_person_btn)
-        buttons_layout.addWidget(save_person_btn)
+        buttons_layout.addWidget(self.cancel_person_btn)
+        buttons_layout.addWidget(self.save_person_btn)
         buttons_layout.addStretch()
 
         person_tab_layout.addLayout(buttons_layout)
@@ -508,7 +515,7 @@ class PersonDialog(QDialog):
 
         row += 1
         self.notes = QTextEdit()
-        self.notes.setPlaceholderText("ادخل ملاحظاتك هنا...")
+      #  self.notes.setPlaceholderText("ادخل ملاحظاتك هنا...")
         self.notes.setMaximumHeight(80)
         self.notes.setStyleSheet("""
             QTextEdit {
@@ -533,40 +540,40 @@ class PersonDialog(QDialog):
 
         row += 1
         # File upload frame - using StyleManager
-        rel_upload_frame = QFrame()
-        rel_upload_frame.setObjectName("RelUploadFrame")
-        rel_upload_frame.setCursor(Qt.PointingHandCursor)
-        rel_upload_frame.setStyleSheet(StyleManager.file_upload_frame())
+        self.rel_upload_frame = QFrame()
+        self.rel_upload_frame.setObjectName("RelUploadFrame")
+        self.rel_upload_frame.setCursor(Qt.PointingHandCursor)
+        self.rel_upload_frame.setStyleSheet(StyleManager.file_upload_frame())
 
-        rel_upload_layout = QVBoxLayout(rel_upload_frame)
+        rel_upload_layout = QVBoxLayout(self.rel_upload_frame)
         rel_upload_layout.setContentsMargins(20, 15, 20, 15)
         rel_upload_layout.setAlignment(Qt.AlignCenter)
         rel_upload_layout.setSpacing(5)
 
         # Upload icon - smaller and centered
-        rel_upload_icon = QLabel()
-        rel_upload_icon.setAlignment(Qt.AlignCenter)
-        rel_upload_icon.setStyleSheet("border: none;")
+        self.rel_upload_icon = QLabel()
+        self.rel_upload_icon.setAlignment(Qt.AlignCenter)
+        self.rel_upload_icon.setStyleSheet("border: none;")
 
         # Load upload icon using Icon component
         from ui.components.icon import Icon
         rel_upload_pixmap = Icon.load_pixmap("upload_file", size=24)
         if rel_upload_pixmap and not rel_upload_pixmap.isNull():
-            rel_upload_icon.setPixmap(rel_upload_pixmap)
+            self.rel_upload_icon.setPixmap(rel_upload_pixmap)
         else:
             # Fallback emoji
-            rel_upload_icon.setText("📁")
-            rel_upload_icon.setStyleSheet("border: none; font-size: 20px;")
+            self.rel_upload_icon.setText("📁")
+            self.rel_upload_icon.setStyleSheet("border: none; font-size: 20px;")
 
         # Upload button - using StyleManager
         self.rel_doc_upload_btn = QPushButton("ارفع صور المستندات")
         self.rel_doc_upload_btn.setStyleSheet(StyleManager.file_upload_button())
         self.rel_doc_upload_btn.clicked.connect(self._browse_relation_files)
 
-        rel_upload_layout.addWidget(rel_upload_icon)
+        rel_upload_layout.addWidget(self.rel_upload_icon)
         rel_upload_layout.addWidget(self.rel_doc_upload_btn)
 
-        relation_grid.addWidget(rel_upload_frame, row, 0, 1, 2)
+        relation_grid.addWidget(self.rel_upload_frame, row, 0, 1, 2)
 
         relation_layout.addLayout(relation_grid)
 
@@ -581,8 +588,8 @@ class PersonDialog(QDialog):
         relation_buttons_layout.setSpacing(15)
 
         # Cancel button (on the right in RTL)
-        cancel_relation_btn = QPushButton("إلغاء")
-        cancel_relation_btn.setStyleSheet("""
+        self.cancel_relation_btn = QPushButton("إلغاء")
+        self.cancel_relation_btn.setStyleSheet("""
             QPushButton {
                 background-color: white;
                 color: #4a90e2;
@@ -597,11 +604,11 @@ class PersonDialog(QDialog):
                 background-color: #f5f7fa;
             }
         """)
-        cancel_relation_btn.clicked.connect(self.reject)
+        self.cancel_relation_btn.clicked.connect(self.reject)
 
         # Save relationship button (on the left in RTL)
-        save_relation_btn = QPushButton("حفظ")
-        save_relation_btn.setStyleSheet("""
+        self.save_relation_btn = QPushButton("حفظ")
+        self.save_relation_btn.setStyleSheet("""
             QPushButton {
                 background-color: #4a90e2;
                 color: white;
@@ -615,11 +622,11 @@ class PersonDialog(QDialog):
                 background-color: #357ABD;
             }
         """)
-        save_relation_btn.clicked.connect(self._on_final_save)
+        self.save_relation_btn.clicked.connect(self._on_final_save)
 
         relation_buttons_layout.addStretch()
-        relation_buttons_layout.addWidget(cancel_relation_btn)
-        relation_buttons_layout.addWidget(save_relation_btn)
+        relation_buttons_layout.addWidget(self.cancel_relation_btn)
+        relation_buttons_layout.addWidget(self.save_relation_btn)
         relation_buttons_layout.addStretch()
 
         relation_tab_layout.addLayout(relation_buttons_layout)
@@ -681,8 +688,6 @@ class PersonDialog(QDialog):
             file_names = [f.split("/")[-1] for f in file_paths]
             self.rel_doc_upload_btn.setText(f"تم اختيار {len(file_names)} ملف")
             # Store file paths for later use
-            if not hasattr(self, 'relation_uploaded_files'):
-                self.relation_uploaded_files = []
             self.relation_uploaded_files = file_paths
 
     def _validate_national_id(self):
@@ -710,6 +715,126 @@ class PersonDialog(QDialog):
         self.national_id_status.setText("✅ الرقم متاح")
         self.national_id_status.setStyleSheet(f"color: {Config.SUCCESS_COLOR};")
         return True
+
+    def _apply_view_only_mode(self):
+        """Make all fields read-only and replace buttons with OK button."""
+        import os
+
+        # Tab 1 - Person fields: make read-only
+        for line_edit in [self.first_name, self.father_name, self.mother_name,
+                          self.last_name, self.national_id, self.phone,
+                          self.email, self.landline]:
+            line_edit.setReadOnly(True)
+
+        self.birth_date.setReadOnly(True)
+        self.birth_date.setCalendarPopup(False)
+        self.birth_date.setButtonSymbols(self.birth_date.NoButtons)
+
+        self.relationship_combo.setEnabled(False)
+
+        # Tab 1 - Show uploaded files or "no documents" label
+        self._show_files_readonly(
+            self.upload_frame, self.upload_icon, self.doc_upload_btn,
+            self.uploaded_files
+        )
+
+        # Tab 2 - Relation fields: make read-only
+        self.contract_type.setEnabled(False)
+        self.rel_type_combo.setEnabled(False)
+
+        self.start_date.setReadOnly(True)
+        self.start_date.setCalendarPopup(False)
+        self.start_date.setButtonSymbols(self.start_date.NoButtons)
+
+        self.ownership_share.setReadOnly(True)
+        self.ownership_share.setButtonSymbols(self.ownership_share.NoButtons)
+
+        self.evidence_type.setEnabled(False)
+        self.evidence_desc.setReadOnly(True)
+        self.notes.setReadOnly(True)
+
+        # Tab 2 - Show uploaded relation files or "no documents" label
+        rel_files = self.relation_uploaded_files if hasattr(self, 'relation_uploaded_files') else []
+        self._show_files_readonly(
+            self.rel_upload_frame, self.rel_upload_icon, self.rel_doc_upload_btn,
+            rel_files
+        )
+
+        # Enable both tabs so user can view relation data
+        self.tab_widget.setTabEnabled(1, True)
+
+        # Replace save/cancel with single OK button on both tabs
+        ok_style = """
+            QPushButton {
+                background-color: #4a90e2;
+                color: white;
+                border-radius: 8px;
+                padding: 12px 40px;
+                font-weight: bold;
+                font-size: 14px;
+                min-width: 200px;
+            }
+            QPushButton:hover {
+                background-color: #357ABD;
+            }
+        """
+
+        # Tab 1: hide cancel, show OK
+        self.cancel_person_btn.hide()
+        self.save_person_btn.setText("موافق")
+        self.save_person_btn.setStyleSheet(ok_style)
+        self.save_person_btn.disconnect()
+        self.save_person_btn.clicked.connect(self.accept)
+
+        # Tab 2: hide cancel, show OK
+        self.cancel_relation_btn.hide()
+        self.save_relation_btn.setText("موافق")
+        self.save_relation_btn.setStyleSheet(ok_style)
+        self.save_relation_btn.disconnect()
+        self.save_relation_btn.clicked.connect(self.accept)
+
+    def _show_files_readonly(self, frame, icon_label, upload_btn, file_paths):
+        """Replace upload area with read-only file list or 'no documents' label."""
+        import os
+
+        # Hide upload button
+        upload_btn.hide()
+
+        # Remove click cursor
+        frame.setCursor(Qt.ArrowCursor)
+
+        if file_paths:
+            # Show file names as labels
+            file_names = [os.path.basename(f) for f in file_paths]
+            files_text = "\n".join(file_names)
+            file_label = QLabel(f"تم رفع {len(file_names)} ملف:\n{files_text}")
+            file_label.setAlignment(Qt.AlignCenter)
+            file_label.setWordWrap(True)
+            file_label.setStyleSheet("""
+                QLabel {
+                    color: #2d3436;
+                    font-size: 12px;
+                    border: none;
+                    background: transparent;
+                    padding: 4px;
+                }
+            """)
+            frame.layout().addWidget(file_label)
+        else:
+            # Show "no documents" message
+            icon_label.hide()
+            no_docs_label = QLabel("لا يوجد مستندات")
+            no_docs_label.setAlignment(Qt.AlignCenter)
+            no_docs_label.setStyleSheet("""
+                QLabel {
+                    color: #999;
+                    font-size: 13px;
+                    border: none;
+                    background: transparent;
+                    padding: 8px;
+                }
+            """)
+            frame.layout().addWidget(no_docs_label)
 
     def _load_person_data(self, person_data: Dict):
         """Load person data into form."""
@@ -742,6 +867,54 @@ class PersonDialog(QDialog):
                 self.relationship_combo.setCurrentIndex(idx)
 
         self.is_contact.setChecked(person_data.get('is_contact_person', False))
+
+        # Load relation data (Tab 2)
+        relation_data = person_data.get('relation_data', {})
+        if relation_data:
+            # Contract type
+            contract_type = relation_data.get('contract_type')
+            if contract_type:
+                idx = self.contract_type.findText(contract_type)
+                if idx >= 0:
+                    self.contract_type.setCurrentIndex(idx)
+
+            # Relation type
+            rel_type = relation_data.get('rel_type')
+            if rel_type:
+                idx = self.rel_type_combo.findData(rel_type)
+                if idx >= 0:
+                    self.rel_type_combo.setCurrentIndex(idx)
+
+            # Start date
+            if relation_data.get('start_date'):
+                sd = QDate.fromString(relation_data['start_date'], 'yyyy-MM-dd')
+                if sd.isValid():
+                    self.start_date.setDate(sd)
+
+            # Ownership share
+            if relation_data.get('ownership_share') is not None:
+                self.ownership_share.setValue(relation_data['ownership_share'])
+
+            # Evidence type
+            evidence_type = relation_data.get('evidence_type')
+            if evidence_type:
+                idx = self.evidence_type.findText(evidence_type)
+                if idx >= 0:
+                    self.evidence_type.setCurrentIndex(idx)
+
+            # Evidence description
+            if relation_data.get('evidence_desc'):
+                self.evidence_desc.setText(relation_data['evidence_desc'])
+
+            # Notes
+            if relation_data.get('notes'):
+                self.notes.setPlainText(relation_data['notes'])
+
+        # Load uploaded file paths if stored
+        if person_data.get('uploaded_files'):
+            self.uploaded_files = person_data['uploaded_files']
+        if person_data.get('relation_uploaded_files'):
+            self.relation_uploaded_files = person_data['relation_uploaded_files']
 
         # If editing, enable relation tab
         if self.editing_mode:
@@ -1015,5 +1188,8 @@ class PersonDialog(QDialog):
                 'evidence_type': self.evidence_type.currentText() if self.evidence_type.currentIndex() > 0 else None,
                 'evidence_desc': self.evidence_desc.text().strip() or None,
                 'notes': self.notes.toPlainText().strip() or None
-            }
+            },
+            # Store uploaded file paths for view mode
+            'uploaded_files': self.uploaded_files or [],
+            'relation_uploaded_files': self.relation_uploaded_files or []
         }
